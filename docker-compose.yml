@@ -1,0 +1,102 @@
+services:
+  # MQTT Broker - Riceve dati da Arduino Opta
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: energy_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/logs:/mosquitto/log
+    networks:
+      - energy_network
+
+  # InfluxDB - Database time-series per dati energetici
+  influxdb:
+    image: influxdb:2.7
+    container_name: energy_influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=energy_monitor_2024
+      - DOCKER_INFLUXDB_INIT_ORG=assistec
+      - DOCKER_INFLUXDB_INIT_BUCKET=energy_data
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=energy-monitor-super-secret-token-change-this
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2
+      - ./influxdb/config:/etc/influxdb2
+    networks:
+      - energy_network
+
+  # Node-RED - Elaborazione flussi MQTT e logica di business
+  nodered:
+    image: nodered/node-red:3.1
+    container_name: energy_nodered
+    restart: unless-stopped
+    ports:
+      - "1880:1880"
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      - ./nodered/data:/data
+    depends_on:
+      - mosquitto
+      - influxdb
+    networks:
+      - energy_network
+
+  # Grafana - Dashboard e visualizzazioni
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: energy_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=energy_monitor_2024
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+  #    - GF_SERVER_ROOT_URL=http://192.168.2.101/grafana/
+  #    - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    networks:
+      - energy_network
+
+  # Nginx - Reverse proxy per accesso unificato
+  nginx:
+    image: nginx:alpine
+    container_name: energy_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Commenta questa riga
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - nodered
+      - grafana
+    networks:
+      - energy_network
+
+networks:
+  energy_network:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  influxdb_data:
+  nodered_data:
+  grafana_data:
