@@ -1,0 +1,51 @@
+# Dati runtime Docker volumes
+nodered/data/.config.*
+nodered/data/flows_cred.json
+nodered/data/.flows_cred.json.backup
+nodered/data/flows.json
+nodered/data/.flows.json.backup
+nodered/data/node_modules/
+nodered/data/.npm/
+nodered/data/package-lock.json
+nodered/data/lib/
+
+mosquitto/data/
+mosquitto/logs/
+influxdb/data/
+grafana/data/
+
+# Certificati SSL
+nginx/ssl/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env.production
+frontend/dist/
+frontend/build/
+
+# File di sistema
+.bash_history
+.bashrc
+.profile
+.sudo_as_admin_successful
+snap/
+
+# Test files
+testPurpose.json
+*.test.json
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
