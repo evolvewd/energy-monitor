@@ -72,7 +72,7 @@ services:
       - influxdb
     networks:
       - energy_network
-
+  
   # Nginx - Reverse proxy per accesso unificato
   nginx:
     image: nginx:alpine
@@ -88,6 +88,32 @@ services:
     depends_on:
       - nodered
       - grafana
+    networks:
+      - energy_network
+
+
+# Frontend Next.js - Dashboard moderna
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: energy_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost/api
+      - NEXT_PUBLIC_MQTT_URL=ws://localhost:9001
+      - NEXT_PUBLIC_INFLUX_URL=http://localhost:8086
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - influxdb
+      - mosquitto
+      - nodered
     networks:
       - energy_network
 
