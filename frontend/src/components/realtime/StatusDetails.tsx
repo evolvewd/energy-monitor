@@ -1,5 +1,5 @@
 // ====================
-// COMPONENTE STATUS DETAILS
+// COMPONENTE STATUS DETAILS - FIXED
 // ====================
 
 // components/realtime/StatusDetails.tsx
@@ -15,6 +15,19 @@ interface StatusDetailsProps {
 
 export const StatusDetails = ({ latest }: StatusDetailsProps) => {
   const getStatusInfo = (status: number) => {
+    // Aggiungi controllo di sicurezza all'inizio
+    if (status === undefined || status === null || typeof status !== "number") {
+      return {
+        color: "gray",
+        text: "N/A",
+        icon: Activity,
+        errors: [],
+        warnings: [],
+        info: [],
+        binary: "N/A",
+      };
+    }
+
     // Stessa logica di getStatusInfo dal componente SystemStatus
     const statusBits = {
       bit0: (status & 1) !== 0,
@@ -66,11 +79,13 @@ export const StatusDetails = ({ latest }: StatusDetailsProps) => {
       errors,
       warnings,
       info,
-      binary: status.toString(2).padStart(16, "0"),
+      binary: status.toString(2).padStart(16, "0"), // Ora status è sicuramente un numero
     };
   };
 
-  const statusInfo = latest ? getStatusInfo(latest.status) : null;
+  // Controlla sia latest che latest.status
+  const statusInfo =
+    latest && latest.status !== undefined ? getStatusInfo(latest.status) : null;
 
   return (
     <Card>

@@ -164,7 +164,13 @@ const categories = [
 ];
 
 export default function DocsPage() {
-  const { currentTime, healthPercentage } = useDashboard();
+  const {
+    currentTime,
+    healthPercentage,
+    connectionStatus, // ← AGGIUNGI
+    isTestingConnections, // ← AGGIUNGI
+    testConnections, // ← AGGIUNGI
+  } = useDashboard();
 
   return (
     <DashboardLayout
@@ -174,6 +180,9 @@ export default function DocsPage() {
       healthPercentage={healthPercentage}
       currentTime={currentTime}
       systemStatus="online"
+      connectionStatus={connectionStatus} // ← AGGIUNGI
+      isTestingConnections={isTestingConnections} // ← AGGIUNGI
+      onTestConnections={testConnections}
     >
       <div className="space-y-8">
         {/* Panoramica del Progetto */}

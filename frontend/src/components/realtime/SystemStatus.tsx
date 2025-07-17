@@ -1,5 +1,5 @@
 // ====================
-// COMPONENTE SYSTEM STATUS
+// COMPONENTE SYSTEM STATUS - FIXED
 // ====================
 
 // components/realtime/SystemStatus.tsx
@@ -23,6 +23,20 @@ export const SystemStatus = ({
   meta,
 }: SystemStatusProps) => {
   const getStatusInfo = (status: number) => {
+    // Aggiungi controllo di sicurezza all'inizio
+    if (status === undefined || status === null || typeof status !== "number") {
+      return {
+        color: "gray",
+        text: "N/A",
+        icon: Activity,
+        errors: [],
+        warnings: [],
+        info: [],
+        binary: "N/A",
+        statusBits: {},
+      };
+    }
+
     const statusBits = {
       bit0: (status & 1) !== 0,
       bit1: (status & 2) !== 0,
@@ -73,12 +87,14 @@ export const SystemStatus = ({
       errors,
       warnings,
       info,
-      binary: status.toString(2).padStart(16, "0"),
+      binary: status.toString(2).padStart(16, "0"), // Ora status è sicuramente un numero
       statusBits,
     };
   };
 
-  const statusInfo = latest ? getStatusInfo(latest.status) : null;
+  // Controlla sia latest che latest.status
+  const statusInfo =
+    latest && latest.status !== undefined ? getStatusInfo(latest.status) : null;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -92,7 +108,7 @@ export const SystemStatus = ({
             <div>
               <p className="text-muted-foreground">Device Status</p>
               <div className="flex items-center">
-                {statusInfo && (
+                {statusInfo ? (
                   <>
                     <statusInfo.icon
                       className={`w-4 h-4 mr-2 text-${statusInfo.color}-500`}
@@ -101,6 +117,8 @@ export const SystemStatus = ({
                       {statusInfo.text}
                     </span>
                   </>
+                ) : (
+                  <span className="font-mono text-gray-500">N/A</span>
                 )}
               </div>
             </div>
@@ -108,7 +126,7 @@ export const SystemStatus = ({
               <p className="text-muted-foreground">Status Code</p>
               <div className="space-y-1">
                 <p className="font-mono">{latest?.status ?? "---"}</p>
-                {statusInfo && (
+                {statusInfo && statusInfo.binary !== "N/A" && (
                   <p className="text-xs text-muted-foreground font-mono">
                     0b{statusInfo.binary}
                   </p>

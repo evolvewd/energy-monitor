@@ -23,9 +23,12 @@ export default function RealtimePage() {
     lastUpdateTime,
     toggleUpdates,
     resetData,
+    currentTime,
+    connectionStatus,
+    isTestingConnections,
+    healthPercentage,
+    testConnections,
   } = useRealtimeData();
-
-  const { currentTime, healthPercentage } = useDashboard();
 
   return (
     <DashboardLayout
@@ -48,6 +51,9 @@ export default function RealtimePage() {
       healthPercentage={healthPercentage}
       currentTime={currentTime}
       systemStatus="online"
+      connectionStatus={connectionStatus}
+      isTestingConnections={isTestingConnections}
+      onTestConnections={testConnections}
     >
       {/* Error Display */}
       {error && <ErrorDisplay error={error} />}

@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { RealtimeData, TimeSeries, ApiResponse } from "@/types/realtime";
+import { useDashboard } from "./useDashboard";
 
 export const useRealtimeData = () => {
   const [data, setData] = useState<RealtimeData[]>([]);
@@ -19,6 +20,14 @@ export const useRealtimeData = () => {
   const [updateCount, setUpdateCount] = useState(0);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const {
+    currentTime,
+    connectionStatus,
+    isTestingConnections,
+    healthPercentage,
+    testConnections,
+  } = useDashboard();
 
   const fetchRealtimeData = async () => {
     try {
@@ -107,5 +116,11 @@ export const useRealtimeData = () => {
     lastUpdateTime,
     toggleUpdates,
     resetData,
+    // Dati dashboard
+    currentTime,
+    connectionStatus,
+    isTestingConnections,
+    healthPercentage,
+    testConnections,
   };
 };
