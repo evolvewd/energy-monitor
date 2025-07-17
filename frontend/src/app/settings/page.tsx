@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import {
   Card,
   CardContent,
@@ -34,7 +35,6 @@ import {
   Save,
 } from "lucide-react";
 
-import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { useDashboard } from "@/hooks/useDashboard";
 
@@ -146,27 +146,20 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <DashboardHeader
-        title="Impostazioni Sistema"
-        subtitle="Configurazione tecnica del sistema di monitoraggio"
-        currentTime={currentTime}
-        healthPercentage={healthPercentage}
-        variant="full-header"
-      />
-
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        {/* System Status */}
-        <SystemStatus
-          connectionStatus={connectionStatus}
-          isTestingConnections={isTestingConnections}
-          systemHealth={systemHealth}
-          totalServices={totalServices}
-          healthPercentage={healthPercentage}
-          onTestConnections={testConnections}
-        />
-
+    <DashboardLayout
+      pageTitle="Impostazioni Sistema"
+      pageSubtitle="Configurazione e parametri del sistema energetico"
+      headerActions={
+        <Button onClick={testConnections} disabled={isTestingConnections}>
+          Test Connessioni
+        </Button>
+      }
+      notifications={0}
+      healthPercentage={healthPercentage}
+      currentTime={currentTime}
+      systemStatus="online"
+    >
+      <div className="space-y-6">
         {/* Sezione TVCC */}
         <Card>
           <CardHeader>
@@ -374,17 +367,7 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Alert informativo */}
-        <Alert>
-          <Settings className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Modalità Configurazione:</strong> Le impostazioni sono
-            attualmente in modalità sviluppo. Le configurazioni salvate non
-            influenzeranno il sistema di produzione fino all'attivazione finale.
-          </AlertDescription>
-        </Alert>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

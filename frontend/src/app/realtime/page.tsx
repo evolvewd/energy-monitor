@@ -6,13 +6,14 @@
 
 "use client";
 
-import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { ErrorDisplay } from "@/components/realtime/ErrorDisplay";
 import { SystemStatus } from "@/components/realtime/SystemStatus";
 import { StatusDetails } from "@/components/realtime/StatusDetails";
 import { MetricsSection } from "@/components/realtime/MetricsSection";
 import { useRealtimeData } from "@/hooks/useRealtimeData";
 import { useDashboard } from "@/hooks/useDashboard";
+import { Button } from "@/components/ui/button";
 
 export default function RealtimePage() {
   const {
@@ -31,27 +32,32 @@ export default function RealtimePage() {
   const { currentTime, healthPercentage } = useDashboard();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Unificato con Controlli Realtime */}
-      <DashboardHeader
-        title="Energy Monitor"
-        subtitle="Monitoraggio in tempo reale • Aggiornamento ogni secondo"
-        currentTime={currentTime}
-        healthPercentage={healthPercentage}
-        variant="full-header"
-        realtimeControls={{
-          isRunning,
-          updateCount,
-          onToggleUpdates: toggleUpdates,
-          onResetData: resetData,
-        }}
-      />
+    <DashboardLayout
+      pageTitle="Dati Real-time"
+      pageSubtitle="Monitoraggio in tempo reale • Aggiornamento automatico"
+      headerActions={
+        <>
+          <Button
+            onClick={toggleUpdates}
+            variant={isRunning ? "destructive" : "default"}
+          >
+            {isRunning ? "Stop" : "Start"}
+          </Button>
+          <Button onClick={resetData} variant="outline">
+            Reset
+          </Button>
+        </>
+      }
+      notifications={error ? 1 : 0}
+      healthPercentage={healthPercentage}
+      currentTime={currentTime}
+      systemStatus="online"
+    >
+      {/* Error Display */}
+      {error && <ErrorDisplay error={error} />}
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        {/* Error Display */}
-        {error && <ErrorDisplay error={error} />}
-
-        {/* Status e System Info */}
+      {/* Status e System Info */}
+      <div className="space-y-6">
         <SystemStatus
           latest={latest}
           data={data}
@@ -77,7 +83,7 @@ export default function RealtimePage() {
           trends={trends}
           type="peak"
         />
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

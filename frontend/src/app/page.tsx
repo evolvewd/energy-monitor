@@ -17,7 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { EnergyMetricsSection } from "@/components/dashboard/EnergyMetricsSection";
 import { ChartsSection } from "@/components/dashboard/ChartsSection";
@@ -103,17 +103,17 @@ export default function EnergyDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <DashboardHeader
-        title="Energy Monitor"
-        subtitle="Sistema di monitoraggio energetico"
-        currentTime={currentTime}
-        healthPercentage={healthPercentage}
-        variant="full-header"
-      />
+    <DashboardLayout
+      pageTitle="Dashboard Principale"
+      pageSubtitle="Panoramica del sistema di monitoraggio energetico"
+      notifications={2}
+      healthPercentage={healthPercentage}
+      currentTime={currentTime}
+      systemStatus="online"
+    >
+      {/* Contenuto della dashboard */}
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
+      <div className="space-y-6">
         {/* System Status */}
         <SystemStatus
           connectionStatus={connectionStatus}
@@ -157,15 +157,7 @@ export default function EnergyDashboard() {
         <QuickActions connectionStatus={connectionStatus} />
 
         {/* Development Notice */}
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Dashboard in sviluppo:</strong> I dati mostrati sono
-            simulati. L'integrazione con i sensori reali e i grafici interattivi
-            saranno implementati nelle prossime fasi.
-          </AlertDescription>
-        </Alert>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
