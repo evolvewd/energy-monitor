@@ -30,8 +30,8 @@ export default function EnergyDashboard() {
     currentTime,
     connectionStatus,
     isTestingConnections,
-    isLoading,
     systemHealth,
+    isLoading,
     totalServices,
     healthPercentage,
     testConnections,
@@ -110,20 +110,14 @@ export default function EnergyDashboard() {
       healthPercentage={healthPercentage}
       currentTime={currentTime}
       systemStatus="online"
+      // Aggiungi questi nuovi props:
+      connectionStatus={connectionStatus}
+      isTestingConnections={isTestingConnections}
+      onTestConnections={testConnections}
     >
       {/* Contenuto della dashboard */}
 
       <div className="space-y-6">
-        {/* System Status */}
-        <SystemStatus
-          connectionStatus={connectionStatus}
-          isTestingConnections={isTestingConnections}
-          systemHealth={systemHealth}
-          totalServices={totalServices}
-          healthPercentage={healthPercentage}
-          onTestConnections={testConnections}
-        />
-
         {/* Energy Metrics */}
         <EnergyMetricsSection
           title="Metriche Energetiche"
@@ -151,12 +145,10 @@ export default function EnergyDashboard() {
         </div>
 
         {/* Charts */}
-        <ChartsSection />
+        {/* <ChartsSection /> */}
 
         {/* Quick Actions */}
-        <QuickActions connectionStatus={connectionStatus} />
-
-        {/* Development Notice */}
+        {/* <QuickActions connectionStatus={connectionStatus} /> */}
       </div>
     </DashboardLayout>
   );

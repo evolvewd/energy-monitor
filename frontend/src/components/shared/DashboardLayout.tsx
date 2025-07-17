@@ -15,6 +15,16 @@ interface DashboardLayoutProps {
   currentTime?: string | Date | null;
   systemStatus?: "online" | "offline" | "maintenance";
   className?: string;
+  // Aggiungiamo i dati del SystemStatus
+  connectionStatus?: {
+    influxdb: "online" | "offline" | "warning" | "testing";
+    mqtt: "online" | "offline" | "warning" | "testing";
+    grafana: "online" | "offline" | "warning" | "testing";
+    nodered: "online" | "offline" | "warning" | "testing";
+    nginx: "online" | "offline" | "warning" | "testing";
+  };
+  isTestingConnections?: boolean;
+  onTestConnections?: () => void;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -26,6 +36,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   healthPercentage = 85,
   currentTime,
   systemStatus = "online",
+  connectionStatus,
+  isTestingConnections,
+  onTestConnections,
   className,
 }) => {
   return (
@@ -35,6 +48,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         healthPercentage={healthPercentage}
         currentTime={currentTime}
         systemStatus={systemStatus}
+        connectionStatus={connectionStatus}
+        isTestingConnections={isTestingConnections}
+        onTestConnections={onTestConnections}
       />
 
       {/* Main Content Area */}

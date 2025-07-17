@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import {
   Wifi,
   Server,
   Clock,
+  Database,
+  BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,11 +32,22 @@ interface NavItem {
   badge?: string;
 }
 
+interface ConnectionStatus {
+  influxdb: "online" | "offline" | "warning" | "testing";
+  mqtt: "online" | "offline" | "warning" | "testing";
+  grafana: "online" | "offline" | "warning" | "testing";
+  nodered: "online" | "offline" | "warning" | "testing";
+  nginx: "online" | "offline" | "warning" | "testing";
+}
+
 interface DashboardSidebarProps {
   className?: string;
   healthPercentage?: number;
   currentTime?: string | Date | null;
   systemStatus?: "online" | "offline" | "maintenance";
+  connectionStatus?: ConnectionStatus;
+  isTestingConnections?: boolean;
+  onTestConnections?: () => void;
 }
 
 const navigationItems: NavItem[] = [
@@ -76,23 +90,43 @@ const navigationItems: NavItem[] = [
   },
 ];
 
+const serviceConfig = {
+  influxdb: {
+    icon: Database,
+    label: "InfluxDB",
+    description: "Database time-series",
+  },
+  mqtt: { icon: Wifi, label: "MQTT", description: "Messaggi IoT" },
+  grafana: {
+    icon: BarChart3,
+    label: "Grafana",
+    description: "Dashboard avanzate",
+  },
+  nodered: {
+    icon: Activity,
+    label: "Node-RED",
+    description: "Flow automation",
+  },
+  nginx: { icon: Server, label: "Nginx", description: "Reverse proxy" },
+};
+
 export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   className,
   healthPercentage = 85,
   currentTime,
   systemStatus = "online",
+  connectionStatus,
+  isTestingConnections = false,
+  onTestConnections,
 }) => {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
-  const getHealthColor = (percentage: number) => {
-    if (percentage >= 90) return "text-green-500";
-    if (percentage >= 70) return "text-yellow-500";
-    return "text-red-500";
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const getHealthBadgeVariant = (
-    percentage: number
-  ): "default" | "secondary" | "destructive" => {
+  const getHealthBadgeVariant = (percentage: number) => {
     if (percentage >= 90) return "default";
     if (percentage >= 70) return "secondary";
     return "destructive";
@@ -104,6 +138,10 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         return "text-green-500";
       case "offline":
         return "text-red-500";
+      case "warning":
+        return "text-yellow-500";
+      case "testing":
+        return "text-blue-500";
       case "maintenance":
         return "text-yellow-500";
       default:
@@ -112,9 +150,14 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   };
 
   const formatTime = (time?: string | Date | null) => {
-    if (!time) return new Date().toLocaleTimeString("it-IT");
-    if (typeof time === "string") return time;
-    return time.toLocaleTimeString("it-IT");
+    if (!mounted) return "--:--:--";
+
+    if (time) {
+      if (typeof time === "string") return time;
+      return time.toLocaleTimeString("it-IT", { timeZone: "Europe/Rome" });
+    }
+
+    return new Date().toLocaleTimeString("it-IT", { timeZone: "Europe/Rome" });
   };
 
   return (
@@ -207,6 +250,76 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
           <Separator />
 
+          {/* Services Status */}
+          {connectionStatus && (
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Services
+                  </span>
+                  {onTestConnections && (
+                    <Button
+                      onClick={onTestConnections}
+                      disabled={isTestingConnections}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                    >
+                      <RefreshCw
+                        className={cn(
+                          "h-3 w-3",
+                          isTestingConnections && "animate-spin"
+                        )}
+                      />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {Object.entries(connectionStatus).map(([service, status]) => {
+                    const config =
+                      serviceConfig[service as keyof typeof serviceConfig];
+                    if (!config) return null;
+
+                    const ServiceIcon = config.icon;
+                    return (
+                      <div
+                        key={service}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <ServiceIcon className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {config.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Circle
+                            className={cn(
+                              "h-1.5 w-1.5 fill-current",
+                              getStatusColor(status),
+                              status === "testing" && "animate-pulse"
+                            )}
+                          />
+                          <span
+                            className={cn(
+                              "text-xs capitalize",
+                              getStatusColor(status)
+                            )}
+                          >
+                            {status === "testing" ? "..." : status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
           {/* System Status */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -248,15 +361,18 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Time</span>
+            {/* Time Display */}
+            {mounted && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Time</span>
+                </div>
+                <span className="text-xs text-foreground font-mono">
+                  {formatTime(currentTime)}
+                </span>
               </div>
-              <span className="text-xs text-foreground font-mono">
-                {formatTime(currentTime)}
-              </span>
-            </div>
+            )}
           </div>
 
           {/* Company info */}
