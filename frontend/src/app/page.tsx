@@ -23,6 +23,7 @@ import { EnergyMetricsSection } from "@/components/dashboard/EnergyMetricsSectio
 import { ChartsSection } from "@/components/dashboard/ChartsSection";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { useDashboard } from "@/hooks/useDashboard";
+import { CameraWidget } from "@/components/shared/CameraWidget";
 
 export default function EnergyDashboard() {
   const {
@@ -131,6 +132,23 @@ export default function EnergyDashboard() {
           showTrendText={true}
           isLive={true}
         />
+
+        {/* Camera Widget */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">TVCC</h2>
+            <p className="text-sm text-muted-foreground">
+              Immagini con aggiornamento 2sec
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <CameraWidget cameraName="Retro" ipAddress="192.168.2.234" />
+          <CameraWidget cameraName="Magazzino" ipAddress="192.168.2.234" />
+          <CameraWidget cameraName="Parcheggio" ipAddress="192.168.2.234" />
+          <CameraWidget cameraName="Ingresso" ipAddress="192.168.2.234" />
+        </div>
 
         {/* Charts */}
         <ChartsSection />
