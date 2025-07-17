@@ -37,7 +37,7 @@ export const MetricsSection = ({
           />
           <MetricCard
             title="Corrente RMS"
-            value={latest?.i_rms ? latest.i_rms / 1000 : null}
+            value={latest?.i_rms ? latest.i_rms : null}
             unit="A"
             icon={Activity}
             trend={trends.i_rms}

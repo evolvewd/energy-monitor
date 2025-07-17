@@ -1,8 +1,4 @@
-// ====================
-// REALTIME PAGE AGGIORNATA
-// ====================
-
-// app/realtime/page.tsx (versione aggiornata)
+// app/realtime/page.tsx
 
 "use client";
 

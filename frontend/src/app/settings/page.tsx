@@ -1,6 +1,6 @@
+// frontend/src/app/settings/page.tsx
 "use client";
 
-import { useState } from "react";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import {
   Card,
@@ -33,94 +33,65 @@ import {
   AlertTriangle,
   CheckCircle,
   Save,
+  Power,
 } from "lucide-react";
-
-import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { useDashboard } from "@/hooks/useDashboard";
-
-interface CameraConfig {
-  id: string;
-  name: string;
-  ipAddress: string;
-  username: string;
-  password: string;
-  status: "connected" | "disconnected" | "testing";
-}
+import { useTvccSettings, CameraConfig } from "@/contexts/TvccContext";
+import { useState } from "react";
 
 export default function SettingsPage() {
   const {
     currentTime,
     connectionStatus,
     isTestingConnections,
-    systemHealth,
-    totalServices,
     healthPercentage,
     testConnections,
   } = useDashboard();
 
-  // Stati per la configurazione TVCC
-  const [tvccEnabled, setTvccEnabled] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState("5000");
-  const [cameras, setCameras] = useState<CameraConfig[]>([
-    {
-      id: "1",
-      name: "Retro",
-      ipAddress: "192.168.2.234",
-      username: "admin",
-      password: "Assistec",
-      status: "connected",
-    },
-  ]);
+  const {
+    settings,
+    updateSettings,
+    updateCamera,
+    addCamera,
+    removeCamera,
+    testCameraConnection,
+    saveSettings,
+  } = useTvccSettings();
 
-  // Funzioni per gestire le telecamere
-  const addCamera = () => {
-    const newCamera: CameraConfig = {
-      id: Date.now().toString(),
-      name: `Camera ${cameras.length + 1}`,
-      ipAddress: "",
-      username: "admin",
-      password: "",
-      status: "disconnected",
-    };
-    setCameras([...cameras, newCamera]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const handleTvccEnabledChange = (enabled: boolean) => {
+    updateSettings({ tvccEnabled: enabled });
+    setHasUnsavedChanges(true);
   };
 
-  const removeCamera = (id: string) => {
-    setCameras(cameras.filter((camera) => camera.id !== id));
+  const handleRefreshIntervalChange = (interval: string) => {
+    updateSettings({ refreshInterval: interval });
+    setHasUnsavedChanges(true);
   };
 
-  const updateCamera = (
+  const handleCameraUpdate = (
     id: string,
     field: keyof CameraConfig,
-    value: string
+    value: string | boolean
   ) => {
-    setCameras(
-      cameras.map((camera) =>
-        camera.id === id ? { ...camera, [field]: value } : camera
-      )
-    );
+    updateCamera(id, { [field]: value });
+    setHasUnsavedChanges(true);
   };
 
-  const testCameraConnection = (id: string) => {
-    setCameras(
-      cameras.map((camera) =>
-        camera.id === id ? { ...camera, status: "testing" } : camera
-      )
-    );
+  const handleSaveSettings = () => {
+    saveSettings();
+    setHasUnsavedChanges(false);
+  };
 
-    // Simula test di connessione
-    setTimeout(() => {
-      setCameras(
-        cameras.map((camera) =>
-          camera.id === id
-            ? {
-                ...camera,
-                status: Math.random() > 0.3 ? "connected" : "disconnected",
-              }
-            : camera
-        )
-      );
-    }, 2000);
+  const handleAddCamera = () => {
+    addCamera();
+    setHasUnsavedChanges(true);
+  };
+
+  const handleRemoveCamera = (id: string) => {
+    removeCamera(id);
+    setHasUnsavedChanges(true);
   };
 
   const getStatusIcon = (status: CameraConfig["status"]) => {
@@ -148,18 +119,44 @@ export default function SettingsPage() {
   return (
     <DashboardLayout
       pageTitle="Impostazioni Sistema"
-      pageSubtitle="Configurazione e parametri del sistema energetico"
+      pageSubtitle="Configurazione del sistema energetico e TVCC"
       headerActions={
-        <Button onClick={testConnections} disabled={isTestingConnections}>
-          Test Connessioni
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={testConnections}
+            disabled={isTestingConnections}
+            variant="outline"
+          >
+            Test Connessioni
+          </Button>
+          {hasUnsavedChanges && (
+            <Button onClick={handleSaveSettings}>
+              <Save className="h-4 w-4 mr-2" />
+              Salva Modifiche
+            </Button>
+          )}
+        </div>
       }
       notifications={0}
       healthPercentage={healthPercentage}
       currentTime={currentTime}
       systemStatus="online"
+      connectionStatus={connectionStatus}
+      isTestingConnections={isTestingConnections}
+      onTestConnections={testConnections}
     >
       <div className="space-y-6">
+        {/* Avviso modifiche non salvate */}
+        {hasUnsavedChanges && (
+          <Alert>
+            <Settings className="h-4 w-4" />
+            <AlertDescription>
+              Hai modifiche non salvate. Clicca su "Salva Modifiche" per
+              applicarle.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Sezione TVCC */}
         <Card>
           <CardHeader>
@@ -173,8 +170,8 @@ export default function SettingsPage() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant={tvccEnabled ? "default" : "secondary"}>
-                {tvccEnabled ? "Attivo" : "Disattivo"}
+              <Badge variant={settings.tvccEnabled ? "default" : "secondary"}>
+                {settings.tvccEnabled ? "Attivo" : "Disattivo"}
               </Badge>
             </div>
           </CardHeader>
@@ -189,10 +186,13 @@ export default function SettingsPage() {
                   Attiva la sezione telecamere nella dashboard principale
                 </div>
               </div>
-              <Switch checked={tvccEnabled} onCheckedChange={setTvccEnabled} />
+              <Switch
+                checked={settings.tvccEnabled}
+                onCheckedChange={handleTvccEnabledChange}
+              />
             </div>
 
-            {tvccEnabled && (
+            {settings.tvccEnabled && (
               <>
                 <Separator />
 
@@ -207,8 +207,8 @@ export default function SettingsPage() {
                         Intervallo Aggiornamento
                       </Label>
                       <Select
-                        value={refreshInterval}
-                        onValueChange={setRefreshInterval}
+                        value={settings.refreshInterval}
+                        onValueChange={handleRefreshIntervalChange}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleziona intervallo" />
@@ -230,138 +230,162 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium">
-                      Telecamere Configurate
+                      Telecamere Configurate ({settings.cameras.length})
                     </h4>
-                    <Button onClick={addCamera} size="sm" variant="outline">
+                    <Button
+                      onClick={handleAddCamera}
+                      size="sm"
+                      variant="outline"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Aggiungi Camera
                     </Button>
                   </div>
 
                   <div className="space-y-4">
-                    {cameras.map((camera) => (
+                    {settings.cameras.map((camera) => (
                       <Card key={camera.id} className="border-2">
                         <CardContent className="pt-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* Nome telecamera */}
-                            <div className="space-y-2">
-                              <Label>Nome</Label>
-                              <Input
-                                value={camera.name}
-                                onChange={(e) =>
-                                  updateCamera(
-                                    camera.id,
-                                    "name",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Nome telecamera"
-                              />
+                          <div className="space-y-4">
+                            {/* Header telecamera con stato */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Camera className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {camera.name || `Camera ${camera.id}`}
+                                </span>
+                                {getStatusIcon(camera.status)}
+                                <span className="text-sm text-muted-foreground">
+                                  {getStatusText(camera.status)}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={camera.enabled}
+                                  onCheckedChange={(enabled) =>
+                                    handleCameraUpdate(
+                                      camera.id,
+                                      "enabled",
+                                      enabled
+                                    )
+                                  }
+                                />
+                                <Label className="text-sm">Attiva</Label>
+                              </div>
                             </div>
 
-                            {/* Indirizzo IP */}
-                            <div className="space-y-2">
-                              <Label>Indirizzo IP</Label>
-                              <Input
-                                value={camera.ipAddress}
-                                onChange={(e) =>
-                                  updateCamera(
-                                    camera.id,
-                                    "ipAddress",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="192.168.1.100"
-                              />
+                            {/* Configurazione telecamera */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                              {/* Nome telecamera */}
+                              <div className="space-y-2">
+                                <Label>Nome</Label>
+                                <Input
+                                  value={camera.name}
+                                  onChange={(e) =>
+                                    handleCameraUpdate(
+                                      camera.id,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Nome telecamera"
+                                />
+                              </div>
+
+                              {/* Indirizzo IP */}
+                              <div className="space-y-2">
+                                <Label>Indirizzo IP</Label>
+                                <Input
+                                  value={camera.ipAddress}
+                                  onChange={(e) =>
+                                    handleCameraUpdate(
+                                      camera.id,
+                                      "ipAddress",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="192.168.1.100"
+                                />
+                              </div>
+
+                              {/* Username */}
+                              <div className="space-y-2">
+                                <Label>Username</Label>
+                                <Input
+                                  value={camera.username}
+                                  onChange={(e) =>
+                                    handleCameraUpdate(
+                                      camera.id,
+                                      "username",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="admin"
+                                />
+                              </div>
+
+                              {/* Password */}
+                              <div className="space-y-2">
+                                <Label>Password</Label>
+                                <Input
+                                  type="password"
+                                  value={camera.password}
+                                  onChange={(e) =>
+                                    handleCameraUpdate(
+                                      camera.id,
+                                      "password",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Password"
+                                />
+                              </div>
                             </div>
 
-                            {/* Username */}
-                            <div className="space-y-2">
-                              <Label>Username</Label>
-                              <Input
-                                value={camera.username}
-                                onChange={(e) =>
-                                  updateCamera(
-                                    camera.id,
-                                    "username",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="admin"
-                              />
-                            </div>
+                            {/* Azioni telecamera */}
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <div className="flex items-center space-x-2">
+                                {camera.status === "connected" &&
+                                  camera.ipAddress && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {camera.ipAddress}
+                                    </Badge>
+                                  )}
+                              </div>
 
-                            {/* Password */}
-                            <div className="space-y-2">
-                              <Label>Password</Label>
-                              <Input
-                                type="password"
-                                value={camera.password}
-                                onChange={(e) =>
-                                  updateCamera(
-                                    camera.id,
-                                    "password",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="password"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Status e azioni */}
-                          <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                            <div className="flex items-center space-x-2">
-                              {getStatusIcon(camera.status)}
-                              <span className="text-sm">
-                                {getStatusText(camera.status)}
-                              </span>
-                              {camera.status === "connected" &&
-                                camera.ipAddress && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {camera.ipAddress}
-                                  </Badge>
-                                )}
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => testCameraConnection(camera.id)}
-                                disabled={
-                                  camera.status === "testing" ||
-                                  !camera.ipAddress
-                                }
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Test
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => removeCamera(camera.id)}
-                                disabled={cameras.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    testCameraConnection(camera.id)
+                                  }
+                                  disabled={
+                                    camera.status === "testing" ||
+                                    !camera.ipAddress
+                                  }
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Test
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRemoveCamera(camera.id)}
+                                  disabled={settings.cameras.length === 1}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
-                </div>
-
-                <Separator />
-
-                {/* Azioni di salvataggio */}
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline">Annulla</Button>
-                  <Button>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salva Configurazione
-                  </Button>
                 </div>
               </>
             )}

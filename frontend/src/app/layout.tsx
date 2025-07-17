@@ -1,5 +1,7 @@
+// frontend/src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { TvccProvider } from "@/contexts/TvccContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +16,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Energy Monitor Dashboard | ASSISTEC",
-  description: "Sistema di monitoraggio energetico in tempo reale con Arduino Opta, InfluxDB, Node-RED e Grafana",
-  keywords: "energy monitoring, arduino opta, influxdb, grafana, node-red, iot, dashboard",
+  description:
+    "Sistema di monitoraggio energetico in tempo reale con Arduino Opta, InfluxDB, Node-RED e Grafana",
+  keywords:
+    "energy monitoring, arduino opta, influxdb, grafana, node-red, iot, dashboard",
   authors: [{ name: "ASSISTEC" }],
   viewport: "width=device-width, initial-scale=1",
 };
@@ -35,7 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
-        {children}
+        <TvccProvider>{children}</TvccProvider>
       </body>
     </html>
   );

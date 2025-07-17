@@ -1,153 +1,143 @@
-// ====================
-// PAGINA PRINCIPALE REFACTORED
-// ====================
-
-// app/page.tsx
+// frontend/src/app/page.tsx
 "use client";
 
-import { useState } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  AlertTriangle,
-  Zap,
-  Gauge,
-  Activity,
-  Battery,
-  DollarSign,
-  TrendingUp,
-} from "lucide-react";
-
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
-import { SystemStatus } from "@/components/dashboard/SystemStatus";
 import { EnergyMetricsSection } from "@/components/dashboard/EnergyMetricsSection";
-import { ChartsSection } from "@/components/dashboard/ChartsSection";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { useDashboard } from "@/hooks/useDashboard";
 import { CameraWidget } from "@/components/shared/CameraWidget";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useTvccSettings } from "@/contexts/TvccContext";
+import { Button } from "@/components/ui/button";
+import { Camera, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default function EnergyDashboard() {
+export default function HomePage() {
   const {
-    currentTime,
     connectionStatus,
     isTestingConnections,
-    systemHealth,
-    isLoading,
-    totalServices,
     healthPercentage,
+    currentTime,
     testConnections,
   } = useDashboard();
 
-  // Mock data - sostituiremo con dati reali
-  const [energyData] = useState({
-    currentPower: 2.35,
-    voltage: 230.2,
-    current: 10.2,
-    totalConsumption: 156.7,
-    costToday: 12.43,
-    efficiency: 87.5,
-  });
+  const { settings } = useTvccSettings();
+  const router = useRouter();
 
-  const energyMetrics = [
-    {
-      title: "Potenza Attuale",
-      value: energyData.currentPower,
-      unit: "kW",
-      icon: Zap,
-      trend: 5.2,
-      description: "Consumo istantaneo",
-      isLoading,
-    },
-    {
-      title: "Tensione",
-      value: energyData.voltage,
-      unit: "V",
-      icon: Gauge,
-      description: "Tensione di rete",
-      isLoading,
-    },
-    {
-      title: "Corrente",
-      value: energyData.current,
-      unit: "A",
-      icon: Activity,
-      description: "Corrente assorbita",
-      isLoading,
-    },
-    {
-      title: "Consumo Oggi",
-      value: energyData.totalConsumption,
-      unit: "kWh",
-      icon: Battery,
-      trend: -2.1,
-      description: "Totale giornaliero",
-      isLoading,
-    },
-    {
-      title: "Costo Oggi",
-      value: energyData.costToday,
-      unit: "€",
-      icon: DollarSign,
-      trend: -2.1,
-      description: "Spesa elettrica",
-      isLoading,
-    },
-    {
-      title: "Efficienza",
-      value: energyData.efficiency,
-      unit: "%",
-      icon: TrendingUp,
-      trend: 3.2,
-      description: "Performance sistema",
-      isLoading,
-    },
-  ];
+  // Filtra solo le telecamere abilitate e con IP configurato
+  const enabledCameras = settings.cameras.filter(
+    (camera) => camera.enabled && camera.ipAddress.trim() !== ""
+  );
 
   return (
     <DashboardLayout
-      pageTitle="Dashboard Principale"
-      pageSubtitle="Panoramica del sistema di monitoraggio energetico"
-      notifications={2}
+      pageTitle="Energy Monitor Dashboard"
+      pageSubtitle="Monitoraggio energetico in tempo reale"
+      notifications={0}
       healthPercentage={healthPercentage}
       currentTime={currentTime}
       systemStatus="online"
-      // Aggiungi questi nuovi props:
       connectionStatus={connectionStatus}
       isTestingConnections={isTestingConnections}
       onTestConnections={testConnections}
     >
-      {/* Contenuto della dashboard */}
-
       <div className="space-y-6">
         {/* Energy Metrics */}
         <EnergyMetricsSection
           title="Metriche Energetiche"
           subtitle="Dati in tempo reale dal sistema"
-          metrics={energyMetrics}
+          metrics={[]} // TODO: implementare energyMetrics
           showTrendText={true}
           isLive={true}
         />
 
-        {/* Camera Widget */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">TVCC</h2>
-            <p className="text-sm text-muted-foreground">
-              Immagini con aggiornamento 2sec
-            </p>
+        {/* TVCC Section - Mostrata solo se abilitata */}
+        {settings.tvccEnabled && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Camera className="h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight">
+                    Sistema TVCC
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {enabledCameras.length > 0
+                      ? `${
+                          enabledCameras.length
+                        } telecamere attive - Aggiornamento ${
+                          parseInt(settings.refreshInterval) / 1000
+                        }sec`
+                      : "Nessuna telecamera configurata"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/settings")}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configura
+              </Button>
+            </div>
+
+            {enabledCameras.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {enabledCameras.map((camera) => (
+                  <CameraWidget
+                    key={camera.id}
+                    cameraName={camera.name}
+                    ipAddress={camera.ipAddress}
+                    username={camera.username}
+                    password={camera.password}
+                    status={camera.status}
+                    refreshInterval={parseInt(settings.refreshInterval)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                <Camera className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                  Nessuna telecamera configurata
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configura le telecamere nelle impostazioni per iniziare a
+                  visualizzare le immagini.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/settings")}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Vai alle Impostazioni
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
-        <div className="flex justify-between items-center">
-          <CameraWidget cameraName="Retro" ipAddress="192.168.2.234" />
-          <CameraWidget cameraName="Magazzino" ipAddress="192.168.2.234" />
-          <CameraWidget cameraName="Parcheggio" ipAddress="192.168.2.234" />
-          <CameraWidget cameraName="Ingresso" ipAddress="192.168.2.234" />
-        </div>
+        {/* Messaggio quando TVCC è disabilitato */}
+        {!settings.tvccEnabled && (
+          <div className="bg-muted/50 border border-muted rounded-lg p-6 text-center">
+            <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              Sistema TVCC Disabilitato
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Il sistema di videosorveglianza è attualmente disabilitato. Puoi
+              abilitarlo nelle impostazioni.
+            </p>
+            <Button variant="outline" onClick={() => router.push("/settings")}>
+              <Settings className="h-4 w-4 mr-2" />
+              Abilita TVCC
+            </Button>
+          </div>
+        )}
 
-        {/* Charts */}
+        {/* Charts Section - Commentato per ora */}
         {/* <ChartsSection /> */}
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Commentato per ora */}
         {/* <QuickActions connectionStatus={connectionStatus} /> */}
       </div>
     </DashboardLayout>
