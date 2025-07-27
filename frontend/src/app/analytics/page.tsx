@@ -82,13 +82,13 @@ export default function AnalyticsPage() {
           </Alert>
         )}
 
+        <InstantVoltageChart
+          currentVoltage={currentVoltage}
+          className="lg:col-span-2 xl:col-span-3"
+        />
         {/* Griglia dei grafici */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4  gap-5 ">
           {/* Grafico Tensione Istantanea */}
-          <InstantVoltageChart
-            currentVoltage={currentVoltage}
-            className="lg:col-span-2 xl:col-span-3"
-          />
 
           {/* Gauge Tensione */}
           <UniversalGauge
@@ -123,22 +123,19 @@ export default function AnalyticsPage() {
                 : "normal"
             }
           />
-        </div>
 
-        {/* Seconda riga con altri gauge */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Gauge Corrente */}
           <UniversalGauge
             value={currentCurrent}
             label="Corrente"
             unit="A"
             min={0}
-            max={50}
+            max={30}
             color="#3b82f6"
             icon={Gauge}
             description="RMS"
             status={
-              currentCurrent > 40
+              currentCurrent > 30
                 ? "danger"
                 : currentCurrent > 30
                 ? "warning"
@@ -152,14 +149,14 @@ export default function AnalyticsPage() {
             label="Potenza"
             unit="kW"
             min={0}
-            max={10}
+            max={6.5}
             color="#8b5cf6"
             icon={Power}
             description="Attiva"
             status={
-              currentPower > 8000
+              currentPower > 6500
                 ? "danger"
-                : currentPower > 6000
+                : currentPower > 5000
                 ? "warning"
                 : "normal"
             }

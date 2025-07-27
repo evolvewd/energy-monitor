@@ -157,9 +157,7 @@ export function UniversalGauge({
   };
 
   return (
-    <Card
-      className={`aspect-square ${className} bg-gradient-to-br from-background to-muted/20 border-border/50`}
-    >
+    <Card className={`aspect-square ${className} bg-card border`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -255,7 +253,6 @@ export function UniversalGauge({
                 transformOrigin: `${center}px ${center}px`,
                 transition:
                   "transform 1500ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))",
               }}
             />
           </svg>
