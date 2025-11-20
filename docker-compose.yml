@@ -14,7 +14,29 @@ services:
     networks:
       - energy_network
 
-  # InfluxDB - Database time-series per dati energetici
+  # PostgreSQL - Database relazionale per configurazioni e settings
+  postgres:
+    image: postgres:16-alpine
+    container_name: energy_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=energy_monitor
+      - POSTGRES_USER=energy_user
+      - POSTGRES_PASSWORD=energy_monitor_2024
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - energy_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U energy_user -d energy_monitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # InfluxDB - Database time-series per dati energetici (SOLO dati sensori)
   influxdb:
     image: influxdb:2.7
     container_name: energy_influxdb
@@ -53,46 +75,46 @@ services:
       - energy_network
 
   # Grafana - Dashboard e visualizzazioni
-  grafana:
-    image: grafana/grafana:10.2.0
-    container_name: energy_grafana
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=energy_monitor_2024
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-  #    - GF_SERVER_ROOT_URL=http://192.168.2.101/grafana/
-  #    - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    volumes:
-      - ./grafana/data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - influxdb
-    networks:
-      - energy_network
+  # grafana:
+  #   image: grafana/grafana:10.2.0
+  #   container_name: energy_grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=energy_monitor_2024
+  #     - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+  # #    - GF_SERVER_ROOT_URL=http://192.168.2.101/grafana/
+  # #    - GF_SERVER_SERVE_FROM_SUB_PATH=true
+  #   volumes:
+  #     - ./grafana/data:/var/lib/grafana
+  #     - ./grafana/provisioning:/etc/grafana/provisioning
+  #   depends_on:
+  #     - influxdb
+  #   networks:
+  #     - energy_network
   
   # Nginx - Reverse proxy per accesso unificato
-  nginx:
-    image: nginx:alpine
-    container_name: energy_nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      # - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Commenta questa riga
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/ssl:/etc/nginx/ssl
-    depends_on:
-      - nodered
-      - grafana
-    networks:
-      - energy_network
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: energy_nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     # - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Commenta questa riga
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #     - ./nginx/ssl:/etc/nginx/ssl
+  #   depends_on:
+  #     - nodered
+  #     - grafana
+  #   networks:
+  #     - energy_network
 
 
-# Frontend Next.js - Dashboard moderna
+  # Frontend Next.js - Dashboard moderna
   # frontend:
   #   build:
   #     context: ./frontend
@@ -123,6 +145,7 @@ networks:
 
 volumes:
   mosquitto_data:
+  postgres_data:
   influxdb_data:
   nodered_data:
   grafana_data:

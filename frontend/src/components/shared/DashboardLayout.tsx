@@ -19,9 +19,7 @@ interface DashboardLayoutProps {
   connectionStatus?: {
     influxdb: "online" | "offline" | "warning" | "testing";
     mqtt: "online" | "offline" | "warning" | "testing";
-    grafana: "online" | "offline" | "warning" | "testing";
     nodered: "online" | "offline" | "warning" | "testing";
-    nginx: "online" | "offline" | "warning" | "testing";
   };
   isTestingConnections?: boolean;
   onTestConnections?: () => void;

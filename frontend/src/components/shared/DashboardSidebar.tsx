@@ -19,7 +19,6 @@ import {
   Server,
   Clock,
   Database,
-  BarChart3,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,9 +34,7 @@ interface NavItem {
 interface ConnectionStatus {
   influxdb: "online" | "offline" | "warning" | "testing";
   mqtt: "online" | "offline" | "warning" | "testing";
-  grafana: "online" | "offline" | "warning" | "testing";
   nodered: "online" | "offline" | "warning" | "testing";
-  nginx: "online" | "offline" | "warning" | "testing";
 }
 
 interface DashboardSidebarProps {
@@ -71,6 +68,12 @@ const navigationItems: NavItem[] = [
     description: "Analisi dati",
   },
   {
+    href: "/setup",
+    label: "Setup",
+    icon: Settings,
+    description: "Configurazione impianto",
+  },
+  {
     href: "/settings",
     label: "Impostazioni",
     icon: Settings,
@@ -97,17 +100,11 @@ const serviceConfig = {
     description: "Database time-series",
   },
   mqtt: { icon: Wifi, label: "MQTT", description: "Messaggi IoT" },
-  grafana: {
-    icon: BarChart3,
-    label: "Grafana",
-    description: "Dashboard avanzate",
-  },
   nodered: {
     icon: Activity,
     label: "Node-RED",
     description: "Flow automation",
   },
-  nginx: { icon: Server, label: "Nginx", description: "Reverse proxy" },
 };
 
 export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({

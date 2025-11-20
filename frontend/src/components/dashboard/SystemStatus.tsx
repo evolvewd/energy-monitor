@@ -78,19 +78,9 @@ export const SystemStatus = ({
             description="Messaggi IoT"
           />
           <StatusIndicator
-            label="Grafana"
-            status={connectionStatus.grafana}
-            description="Dashboard avanzate"
-          />
-          <StatusIndicator
             label="Node-RED"
             status={connectionStatus.nodered}
             description="Flow automation"
-          />
-          <StatusIndicator
-            label="Nginx"
-            status={connectionStatus.nginx}
-            description="Reverse proxy"
           />
         </div>
       </CardContent>

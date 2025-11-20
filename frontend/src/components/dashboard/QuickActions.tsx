@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Settings,
-  TrendingUp,
   Zap,
   Database,
   ExternalLink,
@@ -37,25 +36,7 @@ export const QuickActions = ({ connectionStatus }: QuickActionsProps) => {
         <CardDescription>Accesso diretto ai servizi di sistema</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button
-            variant="outline"
-            className="h-auto p-4 flex flex-col items-center space-y-2"
-            onClick={() => window.open("http://localhost:3001", "_blank")}
-            disabled={connectionStatus.grafana === "offline"}
-          >
-            <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-orange-500" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium">Grafana</p>
-              <p className="text-xs text-muted-foreground">
-                Dashboard avanzate
-              </p>
-            </div>
-            <ExternalLink className="w-3 h-3" />
-          </Button>
-
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Button
             variant="outline"
             className="h-auto p-4 flex flex-col items-center space-y-2"

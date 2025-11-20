@@ -42,6 +42,9 @@ testPurpose.json
 *.log
 logs/
 
+# Credenziali (contiene informazioni sensibili)
+CREDENTIALS.md
+
 # IDE
 .vscode/
 .idea/
@@ -50,4 +53,6 @@ logs/
 
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.dbpostgres/data/
+influxdb/data/
+influxdb/config/influx-configs

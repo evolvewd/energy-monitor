@@ -13,9 +13,7 @@ export const useDashboard = () => {
   const [connectionStatus, setConnectionStatus] = useState<ServiceStatus>({
     influxdb: "testing",
     mqtt: "testing",
-    grafana: "testing",
     nodered: "testing",
-    nginx: "testing",
   });
   const [isTestingConnections, setIsTestingConnections] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,9 +44,7 @@ export const useDashboard = () => {
       setConnectionStatus({
         influxdb: "offline",
         mqtt: "offline",
-        grafana: "offline",
         nodered: "offline",
-        nginx: "offline",
       });
     } finally {
       setIsTestingConnections(false);
