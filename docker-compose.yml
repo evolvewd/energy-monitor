@@ -62,6 +62,7 @@ services:
     image: nodered/node-red:3.1
     container_name: energy_nodered
     restart: unless-stopped
+    user: "1004:1004"  # UID:GID di energymonitor per evitare problemi di permessi
     ports:
       - "1880:1880"
     environment:

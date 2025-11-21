@@ -148,6 +148,7 @@ export interface LettoreModbus {
   type: 'parti_comuni' | 'produzione' | 'accumulo_ac' | 'accumulo_dc' | 'alloggio';
   name: string;
   modbus_address: number;
+  model: '6m' | '7m';
   alloggio_id?: string;
   updated_at?: string;
 }
@@ -155,13 +156,14 @@ export interface LettoreModbus {
 export async function getLettoriModbus(): Promise<LettoreModbus[]> {
   try {
     const result = await query(
-      'SELECT reader_id, type, name, modbus_address, alloggio_id, updated_at FROM modbus_readers ORDER BY reader_id'
+      'SELECT reader_id, type, name, modbus_address, model, alloggio_id, updated_at FROM modbus_readers ORDER BY reader_id'
     );
     return result.rows.map((row) => ({
       reader_id: row.reader_id,
       type: row.type,
       name: row.name,
       modbus_address: row.modbus_address,
+      model: row.model || '6m',
       alloggio_id: row.alloggio_id || undefined,
       updated_at: row.updated_at,
     }));
@@ -174,7 +176,7 @@ export async function getLettoriModbus(): Promise<LettoreModbus[]> {
 export async function getLettoreModbus(reader_id: string): Promise<LettoreModbus | null> {
   try {
     const result = await query(
-      'SELECT reader_id, type, name, modbus_address, alloggio_id, updated_at FROM modbus_readers WHERE reader_id = $1',
+      'SELECT reader_id, type, name, modbus_address, model, alloggio_id, updated_at FROM modbus_readers WHERE reader_id = $1',
       [reader_id]
     );
     if (result.rows.length === 0) return null;
@@ -184,6 +186,7 @@ export async function getLettoreModbus(reader_id: string): Promise<LettoreModbus
       type: row.type,
       name: row.name,
       modbus_address: row.modbus_address,
+      model: row.model || '6m',
       alloggio_id: row.alloggio_id || undefined,
       updated_at: row.updated_at,
     };
@@ -198,14 +201,15 @@ export async function createLettoreModbus(
   type: 'parti_comuni' | 'produzione' | 'accumulo_ac' | 'accumulo_dc' | 'alloggio',
   name: string,
   modbus_address: number,
+  model: '6m' | '7m' = '6m',
   alloggio_id?: string
 ): Promise<LettoreModbus> {
   await query(
-    `INSERT INTO modbus_readers (reader_id, type, name, modbus_address, alloggio_id) 
-     VALUES ($1, $2, $3, $4, $5) 
+    `INSERT INTO modbus_readers (reader_id, type, name, modbus_address, model, alloggio_id) 
+     VALUES ($1, $2, $3, $4, $5, $6) 
      ON CONFLICT (reader_id) 
-     DO UPDATE SET type = $2, name = $3, modbus_address = $4, alloggio_id = $5, updated_at = CURRENT_TIMESTAMP`,
-    [reader_id, type, name, modbus_address, alloggio_id || null]
+     DO UPDATE SET type = $2, name = $3, modbus_address = $4, model = $5, alloggio_id = $6, updated_at = CURRENT_TIMESTAMP`,
+    [reader_id, type, name, modbus_address, model, alloggio_id || null]
   );
 
   return {
@@ -213,6 +217,7 @@ export async function createLettoreModbus(
     type,
     name,
     modbus_address,
+    model,
     alloggio_id,
   };
 }
@@ -220,13 +225,14 @@ export async function createLettoreModbus(
 export async function updateLettoreModbus(
   reader_id: string,
   name: string,
-  modbus_address: number
+  modbus_address: number,
+  model: '6m' | '7m' = '6m'
 ): Promise<LettoreModbus | null> {
   await query(
     `UPDATE modbus_readers 
-     SET name = $1, modbus_address = $2, updated_at = CURRENT_TIMESTAMP 
-     WHERE reader_id = $3`,
-    [name, modbus_address, reader_id]
+     SET name = $1, modbus_address = $2, model = $3, updated_at = CURRENT_TIMESTAMP 
+     WHERE reader_id = $4`,
+    [name, modbus_address, model, reader_id]
   );
 
   return getLettoreModbus(reader_id);

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS modbus_readers (
     type VARCHAR(50) NOT NULL CHECK (type IN ('parti_comuni', 'produzione', 'accumulo_ac', 'accumulo_dc', 'alloggio')),
     name VARCHAR(255) NOT NULL,
     modbus_address INTEGER NOT NULL CHECK (modbus_address >= 1 AND modbus_address <= 247),
+    model VARCHAR(10) NOT NULL DEFAULT '6m' CHECK (model IN ('6m', '7m')),
     alloggio_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

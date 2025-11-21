@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Loader2, Save, AlertCircle, Home, Zap, Trash2 } from "lucide-react";
 import type { SystemSettings, AlloggioConfig, LettoreModbusConfig } from "@/types/settings";
@@ -72,6 +73,7 @@ export default function SetupPage() {
             type: "parti_comuni",
             name: partiComuni?.name || "Parti Comuni",
             modbus_address: partiComuni?.modbus_address || 0,
+            model: partiComuni?.model || "6m",
           });
 
           // Produzione (se abilitata)
@@ -82,6 +84,7 @@ export default function SetupPage() {
               type: "produzione",
               name: produzione?.name || "Produzione Fotovoltaica",
               modbus_address: produzione?.modbus_address || 0,
+              model: produzione?.model || "6m",
             });
           }
 
@@ -93,6 +96,7 @@ export default function SetupPage() {
               type: "accumulo_ac",
               name: accumuloAC?.name || "Accumulo AC",
               modbus_address: accumuloAC?.modbus_address || 0,
+              model: accumuloAC?.model || "6m",
             });
 
             const accumuloDC = existingLettori.find((l: any) => l.reader_id === "accumulo_dc");
@@ -101,6 +105,7 @@ export default function SetupPage() {
               type: "accumulo_dc",
               name: accumuloDC?.name || "Accumulo DC (Batteria)",
               modbus_address: accumuloDC?.modbus_address || 0,
+              model: accumuloDC?.model || "6m",
             });
           }
 
@@ -114,6 +119,7 @@ export default function SetupPage() {
               type: "alloggio",
               name: existing?.name || alloggio?.name || `Alloggio ${i}`,
               modbus_address: existing?.modbus_address || 0,
+              model: existing?.model || "6m",
               alloggio_id: i.toString(),
             });
           }
@@ -172,6 +178,7 @@ export default function SetupPage() {
       type: "parti_comuni",
       name: partiComuni?.name || "Parti Comuni",
       modbus_address: partiComuni?.modbus_address || 0,
+      model: partiComuni?.model || "6m",
     });
 
     // Produzione (se abilitata)
@@ -182,6 +189,7 @@ export default function SetupPage() {
         type: "produzione",
         name: produzione?.name || "Produzione Fotovoltaica",
         modbus_address: produzione?.modbus_address || 0,
+        model: produzione?.model || "6m",
       });
     }
 
@@ -193,6 +201,7 @@ export default function SetupPage() {
         type: "accumulo_ac",
         name: accumuloAC?.name || "Accumulo AC",
         modbus_address: accumuloAC?.modbus_address || 0,
+        model: accumuloAC?.model || "6m",
       });
 
       // Accumulo DC (se abilitato)
@@ -202,6 +211,7 @@ export default function SetupPage() {
         type: "accumulo_dc",
         name: accumuloDC?.name || "Accumulo DC (Batteria)",
         modbus_address: accumuloDC?.modbus_address || 0,
+        model: accumuloDC?.model || "6m",
       });
     }
 
@@ -218,6 +228,7 @@ export default function SetupPage() {
         type: "alloggio",
         name: existing?.name || alloggio?.name || `Alloggio ${i}`,
         modbus_address: modbusAddress,
+        model: existing?.model || "6m",
         alloggio_id: i.toString(),
       });
     }
@@ -339,7 +350,7 @@ export default function SetupPage() {
     }));
   };
 
-  const handleLettoreChange = (reader_id: string, field: "name" | "modbus_address", value: string | number) => {
+  const handleLettoreChange = (reader_id: string, field: "name" | "modbus_address" | "model", value: string | number) => {
     setSettings((prev) => ({
       ...prev,
       lettori: prev.lettori.map((l) =>
@@ -466,7 +477,7 @@ export default function SetupPage() {
                 {settings.lettori.map((lettore) => (
                   <div
                     key={lettore.reader_id}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30"
+                    className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30"
                   >
                     <div className="space-y-2">
                       <Label htmlFor={`name_${lettore.reader_id}`} className="text-xs">
@@ -502,6 +513,25 @@ export default function SetupPage() {
                         placeholder="1-247"
                         className="h-9"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`model_${lettore.reader_id}`} className="text-xs">
+                        Modello Sensore
+                      </Label>
+                      <Select
+                        value={lettore.model || "6m"}
+                        onValueChange={(value) =>
+                          handleLettoreChange(lettore.reader_id, "model", value as "6m" | "7m")
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Seleziona modello" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="6m">6m</SelectItem>
+                          <SelectItem value="7m">7m</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Tipo</Label>

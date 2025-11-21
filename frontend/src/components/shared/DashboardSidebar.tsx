@@ -49,6 +49,12 @@ interface DashboardSidebarProps {
 
 const navigationItems: NavItem[] = [
   {
+    title: "Realtime",
+    href: "/realtime",
+    icon: Activity,
+    description: "Monitoraggio in tempo reale",
+  },
+  {
     href: "/",
     label: "Dashboard",
     icon: Home,

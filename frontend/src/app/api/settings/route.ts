@@ -80,6 +80,12 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
+        if (lettore.model && lettore.model !== "6m" && lettore.model !== "7m") {
+          return NextResponse.json(
+            { success: false, error: "Il modello deve essere '6m' o '7m'" },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -116,6 +122,7 @@ export async function POST(request: Request) {
           lettore.type,
           lettore.name,
           lettore.modbus_address,
+          lettore.model || "6m",
           lettore.alloggio_id
         );
         createdLettori.push(created);

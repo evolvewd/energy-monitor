@@ -19,6 +19,7 @@ export interface LettoreModbusConfig {
   type: "parti_comuni" | "produzione" | "accumulo_ac" | "accumulo_dc" | "alloggio";
   name: string; // Nome descrittivo
   modbus_address: number; // Indirizzo Modbus (numero decimale)
+  model: "6m" | "7m"; // Modello del sensore (6m o 7m)
   alloggio_id?: string; // Solo per tipo "alloggio"
 }
 

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    console.log("=== OPTA Realtime API Called ===");
     const influxUrl =
       process.env.NEXT_PUBLIC_INFLUX_URL || "http://localhost:8086";
     const token =
@@ -12,11 +13,13 @@ export async function GET() {
     const bucket = "opta"; // Nuovo bucket per i dati OPTA
 
     // Query per dati realtime OPTA (aggiornamento ogni secondo)
+    // Legge tutti i dati realtime dal bucket opta (nuovo formato con tag modbus_address, model, type)
     const fluxQuery = `
       from(bucket: "${bucket}")
         |> range(start: -2m)
         |> filter(fn: (r) => r["_measurement"] == "realtime")
-        |> filter(fn: (r) => r["model"] == "6m_produzione")
+        |> filter(fn: (r) => r["type"] == "realtime")
+        |> filter(fn: (r) => r["device"] == "opta")
         |> filter(fn: (r) => r["_field"] == "status" or 
                              r["_field"] == "frequency" or 
                              r["_field"] == "i_peak" or 
@@ -26,22 +29,36 @@ export async function GET() {
                              r["_field"] == "v_peak" or 
                              r["_field"] == "v_rms")
         |> aggregateWindow(every: 1s, fn: last, createEmpty: false)
+        |> group()
         |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"], desc: true)
         |> limit(n: 120)
     `;
 
     console.log("Executing OPTA realtime Flux query");
+    console.log("Query:", fluxQuery.substring(0, 200) + "...");
 
-    const response = await fetch(`${influxUrl}/api/v2/query?org=${org}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${token}`,
-        "Content-Type": "application/vnd.flux",
-        Accept: "application/csv",
-      },
-      body: fluxQuery,
-    });
+    let response;
+    try {
+      response = await fetch(`${influxUrl}/api/v2/query?org=${org}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/vnd.flux",
+          Accept: "application/csv",
+        },
+        body: fluxQuery,
+      });
+    } catch (fetchError) {
+      console.error("Fetch error:", fetchError);
+      return NextResponse.json(
+        {
+          error: `Failed to connect to InfluxDB: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`,
+          status: "error",
+        },
+        { status: 500 }
+      );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -55,8 +72,23 @@ export async function GET() {
       );
     }
 
-    const csvData = await response.text();
-    console.log("Raw CSV response length:", csvData.length);
+    let csvData: string;
+    try {
+      csvData = await response.text();
+      console.log("Raw CSV response length:", csvData.length);
+      if (csvData.length > 0) {
+        console.log("Raw CSV first 500 chars:", csvData.substring(0, 500));
+      }
+    } catch (textError) {
+      console.error("Error reading response text:", textError);
+      return NextResponse.json(
+        {
+          error: `Failed to read InfluxDB response: ${textError instanceof Error ? textError.message : "Unknown error"}`,
+          status: "error",
+        },
+        { status: 500 }
+      );
+    }
 
     if (!csvData || csvData.trim().length === 0) {
       console.log("Empty CSV response from InfluxDB");
@@ -88,9 +120,43 @@ export async function GET() {
 
     // Parse CSV data
     const lines = csvData.trim().split("\n");
-    const headers = lines[0].split(",");
+    if (lines.length < 2) {
+      console.log("Not enough lines in CSV (headers + data)");
+      return NextResponse.json({
+        data: [],
+        latest: {},
+        timeSeries: {
+          timestamps: [],
+          frequency: [],
+          i_rms: [],
+          v_rms: [],
+          p_active: [],
+          i_peak: [],
+          v_peak: [],
+          thd: [],
+          status: [],
+        },
+        trends: {},
+        meta: {
+          totalPoints: 0,
+          updateTime: new Date().toISOString(),
+          queryExecutionTime: Date.now(),
+          fields: [],
+          measurement: "realtime",
+          bucket: bucket,
+          dataRange: null,
+        },
+        status: "success",
+      });
+    }
+    
+    const headers = lines[0]?.split(",") || [];
+    if (headers.length === 0) {
+      throw new Error("Invalid CSV: no headers found");
+    }
 
-    console.log("CSV Headers:", headers);
+    console.log("CSV Headers count:", headers.length);
+    console.log("CSV Lines count:", lines.length);
 
     const data: any[] = [];
     const numericFields = [
@@ -104,64 +170,126 @@ export async function GET() {
       "status",
     ];
 
-    // Parse each line
+    // Parse each line - CSV di InfluxDB può avere virgole nei valori, usa parsing più robusto
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) continue;
+      if (!line || line.startsWith("#")) continue; // Salta righe vuote e commenti
 
       try {
-        const values = line.split(",");
-        if (values.length >= headers.length) {
-          const row: any = {};
-
-          headers.forEach((header, index) => {
-            const cleanHeader = header.replace(/"/g, "").trim();
-            const value = values[index]?.replace(/"/g, "").trim();
-
-            if (cleanHeader === "_time") {
-              row._time = value;
-            } else if (cleanHeader === "_measurement") {
-              row._measurement = value;
-            } else if (numericFields.includes(cleanHeader)) {
-              const numValue = parseFloat(value);
-              row[cleanHeader] = !isNaN(numValue) ? numValue : null;
-            } else {
-              row[cleanHeader] = value;
-            }
-          });
-
-          // Valida che il record abbia timestamp e measurement validi
-          if (row._time && row._measurement) {
-            data.push(row);
+        // Parsing CSV più robusto che gestisce valori con virgole
+        const values: string[] = [];
+        let currentValue = "";
+        let inQuotes = false;
+        
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            values.push(currentValue.trim());
+            currentValue = "";
+          } else {
+            currentValue += char;
           }
+        }
+        values.push(currentValue.trim()); // Aggiungi l'ultimo valore
+
+        if (values.length < headers.length) {
+          console.warn(`Line ${i} has ${values.length} values, expected ${headers.length}`);
+          continue;
+        }
+
+        const row: any = {};
+
+        headers.forEach((header, index) => {
+          const cleanHeader = header.replace(/"/g, "").trim();
+          const value = values[index]?.replace(/"/g, "").trim() || "";
+
+          if (cleanHeader === "_time") {
+            row._time = value;
+          } else if (cleanHeader === "_measurement") {
+            row._measurement = value;
+          } else if (cleanHeader === "modbus_address" || cleanHeader === "model" || cleanHeader === "reader_id" || cleanHeader === "reader_type" || cleanHeader === "alloggio_id") {
+            // Tag InfluxDB
+            row[cleanHeader] = value || null;
+          } else if (numericFields.includes(cleanHeader)) {
+            const numValue = parseFloat(value);
+            row[cleanHeader] = !isNaN(numValue) && value !== "" ? numValue : null;
+          } else if (cleanHeader !== "_start" && cleanHeader !== "_stop" && cleanHeader !== "_field") {
+            // Ignora colonne interne di InfluxDB
+            row[cleanHeader] = value || null;
+          }
+        });
+
+        // Valida che il record abbia timestamp e measurement validi
+        if (row._time && row._measurement) {
+          data.push(row);
         }
       } catch (parseError) {
         console.warn(`Error parsing line ${i}:`, parseError);
         continue;
       }
     }
+    
+    console.log(`Parsed ${data.length} data rows from CSV`);
 
-    // Ordina i dati per timestamp (più recente primo)
-    data.sort(
-      (a, b) => new Date(b._time).getTime() - new Date(a._time).getTime()
+    // Raggruppa i dati per timestamp e modbus_address per gestire più sensori
+    const dataByTime: Record<string, any> = {};
+    
+    data.forEach((row) => {
+      try {
+        const timeKey = row._time;
+        if (!timeKey) return; // Salta righe senza timestamp
+        
+        if (!dataByTime[timeKey]) {
+          dataByTime[timeKey] = {
+            _time: row._time,
+            _measurement: row._measurement || "realtime",
+            modbus_address: row.modbus_address || null,
+            model: row.model || null,
+            reader_id: row.reader_id || null,
+            reader_type: row.reader_type || null,
+          };
+        }
+        // Aggiungi i campi numerici (sovrascrive se già presente, ma va bene)
+        numericFields.forEach((field) => {
+          if (row[field] !== undefined && row[field] !== null && !isNaN(row[field])) {
+            dataByTime[timeKey][field] = row[field];
+          }
+        });
+      } catch (rowError) {
+        console.warn("Error processing row:", rowError, row);
+        // Continua con la prossima riga
+      }
+    });
+
+    // Converti in array e ordina per timestamp (più recente primo)
+    const sortedData = Object.values(dataByTime).sort(
+      (a: any, b: any) => {
+        try {
+          return new Date(b._time).getTime() - new Date(a._time).getTime();
+        } catch {
+          return 0;
+        }
+      }
     );
 
     // Get latest values (primo record dopo ordinamento)
-    const latest = data[0] || {};
+    const latest = (sortedData.length > 0 ? sortedData[0] : {}) as any;
 
     // Create time series per i grafici (ultimi 60 punti)
-    const timeSeriesData = data.slice(0, 60).reverse(); // Reverse per ordine cronologico
+    const timeSeriesData = sortedData.slice(0, 60).reverse(); // Reverse per ordine cronologico
 
     const timeSeries = {
-      timestamps: timeSeriesData.map((d) => d._time || ""),
-      frequency: timeSeriesData.map((d) => d.frequency || 0),
-      i_rms: timeSeriesData.map((d) => d.i_rms || 0),
-      v_rms: timeSeriesData.map((d) => d.v_rms || 0),
-      p_active: timeSeriesData.map((d) => d.p_active || 0),
-      i_peak: timeSeriesData.map((d) => d.i_peak || 0),
-      v_peak: timeSeriesData.map((d) => d.v_peak || 0),
-      thd: timeSeriesData.map((d) => d.thd || 0),
-      status: timeSeriesData.map((d) => d.status || 0),
+      timestamps: timeSeriesData.map((d: any) => (d?._time || "") as string),
+      frequency: timeSeriesData.map((d: any) => (d?.frequency || 0) as number),
+      i_rms: timeSeriesData.map((d: any) => (d?.i_rms || 0) as number),
+      v_rms: timeSeriesData.map((d: any) => (d?.v_rms || 0) as number),
+      p_active: timeSeriesData.map((d: any) => (d?.p_active || 0) as number),
+      i_peak: timeSeriesData.map((d: any) => (d?.i_peak || 0) as number),
+      v_peak: timeSeriesData.map((d: any) => (d?.v_peak || 0) as number),
+      thd: timeSeriesData.map((d: any) => (d?.thd || 0) as number),
+      status: timeSeriesData.map((d: any) => (d?.status || 0) as number),
     };
 
     // Calcola trends (confronto tra ultimo e penultimo valore)
@@ -176,9 +304,9 @@ export async function GET() {
       "thd",
     ];
 
-    if (data.length >= 2) {
-      const current = data[0];
-      const previous = data[1];
+    if (sortedData.length >= 2) {
+      const current: any = sortedData[0];
+      const previous: any = sortedData[1];
 
       trendFields.forEach((field) => {
         const currentValue = current[field];
@@ -203,34 +331,38 @@ export async function GET() {
       });
     }
 
-    console.log("Parsed OPTA realtime data points:", data.length);
-    console.log("Latest values:", latest);
+    console.log("Parsed OPTA realtime data points:", sortedData.length);
+    console.log("Latest values:", JSON.stringify(latest).substring(0, 200));
     console.log("Calculated trends:", trends);
 
-    return NextResponse.json({
-      data: data.slice(0, 60), // Ultimi 60 secondi per i grafici
+    const responseData = {
+      data: sortedData.slice(0, 60), // Ultimi 60 secondi per i grafici
       latest,
       timeSeries,
       trends,
       meta: {
-        totalPoints: data.length,
+        totalPoints: sortedData.length,
         updateTime: new Date().toISOString(),
         queryExecutionTime: Date.now(),
         fields: numericFields,
         measurement: "realtime",
         bucket: bucket,
         dataRange:
-          data.length > 0
+          sortedData.length > 0
             ? {
-                from: data[data.length - 1]._time,
-                to: data[0]._time,
+                from: (sortedData[sortedData.length - 1] as any)?._time || "",
+                to: (sortedData[0] as any)?._time || "",
               }
             : null,
       },
       status: "success",
-    });
+    };
+    
+    console.log("=== Returning response ===");
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("OPTA Realtime InfluxDB API Error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
     return NextResponse.json(
       {
@@ -242,6 +374,7 @@ export async function GET() {
             ? {
                 stack: error instanceof Error ? error.stack : undefined,
                 name: error instanceof Error ? error.name : undefined,
+                message: error instanceof Error ? error.message : String(error),
               }
             : undefined,
       },
