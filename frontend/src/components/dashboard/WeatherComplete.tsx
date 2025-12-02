@@ -813,7 +813,7 @@ export function WeatherComplete() {
                                       </div>
                                     </div>
                                   )}
-                                </>
+                                </div>
                               );
                             })()}
                           </div>
