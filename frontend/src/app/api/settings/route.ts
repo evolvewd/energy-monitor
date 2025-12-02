@@ -94,6 +94,16 @@ export async function POST(request: Request) {
     await setSetting("accumulo_enabled", body.accumulo_enabled ? "true" : "false");
     await setSetting("num_alloggi", body.num_alloggi.toString());
     await setSetting("is_configured", "true");
+    
+    // Salva location se presente
+    if (body.location) {
+      if (body.location.city) {
+        await setSetting("location_city", body.location.city);
+      }
+      if (body.location.address) {
+        await setSetting("location_address", body.location.address);
+      }
+    }
 
     // Elimina e ricrea alloggi
     await deleteAllAlloggi();

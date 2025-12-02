@@ -11,8 +11,6 @@ import {
   Home,
   Activity,
   Settings,
-  FileText,
-  Users,
   Zap,
   Circle,
   Wifi,
@@ -49,12 +47,6 @@ interface DashboardSidebarProps {
 
 const navigationItems: NavItem[] = [
   {
-    title: "Realtime",
-    href: "/realtime",
-    icon: Activity,
-    description: "Monitoraggio in tempo reale",
-  },
-  {
     href: "/",
     label: "Dashboard",
     icon: Home,
@@ -68,34 +60,10 @@ const navigationItems: NavItem[] = [
     badge: "LIVE",
   },
   {
-    href: "/analytics",
-    label: "Analytics",
-    icon: Activity,
-    description: "Analisi dati",
-  },
-  {
     href: "/setup",
     label: "Setup",
     icon: Settings,
     description: "Configurazione impianto",
-  },
-  {
-    href: "/settings",
-    label: "Impostazioni",
-    icon: Settings,
-    description: "Configurazione sistema",
-  },
-  {
-    href: "/docs",
-    label: "Documentazione",
-    icon: FileText,
-    description: "Guide e istruzioni",
-  },
-  {
-    href: "/about",
-    label: "Credits",
-    icon: Users,
-    description: "Informazioni team",
   },
 ];
 

@@ -5,13 +5,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { EnergyMetricsSection } from "@/components/dashboard/EnergyMetricsSection";
-import { CameraWidget } from "@/components/shared/CameraWidget";
+// import { ChartsSection } from "@/components/dashboard/ChartsSection";
+import { WeatherComplete } from "@/components/dashboard/WeatherComplete";
+// import { CameraWidget } from "@/components/shared/CameraWidget";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useTvccSettings } from "@/contexts/TvccContext";
+// import { useTvccSettings } from "@/contexts/TvccContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Camera, Settings, Loader2, AlertCircle, Zap } from "lucide-react";
+import { Settings, Loader2, AlertCircle, Zap } from "lucide-react";
+// import { Camera } from "lucide-react";
 
 export default function HomePage() {
   const {
@@ -22,7 +25,7 @@ export default function HomePage() {
     testConnections,
   } = useDashboard();
 
-  const { settings } = useTvccSettings();
+  // const { settings } = useTvccSettings();
   const router = useRouter();
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
@@ -34,7 +37,7 @@ export default function HomePage() {
       try {
         const response = await fetch("/api/settings/check");
         const data = await response.json();
-        
+
         if (data.success && data.isConfigured) {
           setIsConfigured(true);
           // Carica le settings complete
@@ -57,10 +60,11 @@ export default function HomePage() {
     checkConfiguration();
   }, []);
 
+  // TVCC - Temporaneamente disabilitato
   // Filtra solo le telecamere abilitate e con IP configurato
-  const enabledCameras = settings.cameras.filter(
-    (camera) => camera.enabled && camera.ipAddress.trim() !== ""
-  );
+  // const enabledCameras = settings.cameras.filter(
+  //   (camera) => camera.enabled && camera.ipAddress.trim() !== ""
+  // );
 
   // Mostra loading durante verifica configurazione
   if (isCheckingConfig) {
@@ -165,7 +169,7 @@ export default function HomePage() {
         )}
 
         {/* Alloggi */}
-        {systemSettings?.alloggi && systemSettings.alloggi.length > 0 && (
+        {/*  {systemSettings?.alloggi && systemSettings.alloggi.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Alloggi Monitorati</CardTitle>
@@ -211,19 +215,19 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Energy Metrics */}
-        <EnergyMetricsSection
+        {/*  <EnergyMetricsSection
           title="Metriche Energetiche"
           subtitle="Dati in tempo reale dal sistema"
           metrics={[]} // TODO: implementare energyMetrics
           showTrendText={true}
           isLive={true}
-        />
+        /> */}
 
-        {/* TVCC Section - Mostrata solo se abilitata */}
-        {settings.tvccEnabled && (
+        {/* TVCC Section - Temporaneamente disabilitato */}
+        {/* {settings.tvccEnabled && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -234,11 +238,9 @@ export default function HomePage() {
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     {enabledCameras.length > 0
-                      ? `${
-                          enabledCameras.length
-                        } telecamere attive - Aggiornamento ${
-                          parseInt(settings.refreshInterval) / 1000
-                        }sec`
+                      ? `${enabledCameras.length
+                      } telecamere attive - Aggiornamento ${parseInt(settings.refreshInterval) / 1000
+                      }sec`
                       : "Nessuna telecamera configurata"}
                   </p>
                 </div>
@@ -289,7 +291,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Messaggio quando TVCC è disabilitato */}
         {!settings.tvccEnabled && (
           <div className="bg-muted/50 border border-muted rounded-lg p-6 text-center">
             <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
@@ -305,10 +306,13 @@ export default function HomePage() {
               Abilita TVCC
             </Button>
           </div>
-        )}
+        )} */}
 
-        {/* Charts Section - Commentato per ora */}
+        {/* Charts Section - Temporaneamente disabilitato */}
         {/* <ChartsSection /> */}
+
+        {/* Weather Complete - Componente unificato meteo */}
+        <WeatherComplete />
 
         {/* Quick Actions - Commentato per ora */}
         {/* <QuickActions connectionStatus={connectionStatus} /> */}

@@ -16,7 +16,8 @@ export async function GET() {
       from(bucket: "${bucket}")
         |> range(start: -5m)
         |> filter(fn: (r) => r["_measurement"] == "power")
-        |> filter(fn: (r) => r["model"] == "6m_produzione")
+        |> filter(fn: (r) => r["type"] == "power")
+        |> filter(fn: (r) => r["device"] == "opta")
         |> filter(fn: (r) => r["_field"] == "energy_negative" or 
                              r["_field"] == "energy_positive" or 
                              r["_field"] == "energy_total" or 
@@ -24,7 +25,9 @@ export async function GET() {
                              r["_field"] == "q_reactive" or 
                              r["_field"] == "s_apparent" or
                              r["_field"] == "cos_phi")
+        |> filter(fn: (r) => r["_value"] != 0.0)
         |> aggregateWindow(every: 5s, fn: last, createEmpty: false)
+        |> group()
         |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"], desc: true)
         |> limit(n: 60)

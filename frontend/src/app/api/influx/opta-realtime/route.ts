@@ -28,6 +28,7 @@ export async function GET() {
                              r["_field"] == "thd" or 
                              r["_field"] == "v_peak" or 
                              r["_field"] == "v_rms")
+        |> filter(fn: (r) => r["_value"] != 0.0)
         |> aggregateWindow(every: 1s, fn: last, createEmpty: false)
         |> group()
         |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
@@ -155,7 +156,7 @@ export async function GET() {
       throw new Error("Invalid CSV: no headers found");
     }
 
-    console.log("CSV Headers count:", headers.length);
+    console.log("CSV Headers:", headers);
     console.log("CSV Lines count:", lines.length);
 
     const data: any[] = [];
@@ -170,29 +171,14 @@ export async function GET() {
       "status",
     ];
 
-    // Parse each line - CSV di InfluxDB può avere virgole nei valori, usa parsing più robusto
+    // Parse each line - CSV di InfluxDB dopo pivot ha solo _time e i campi come colonne
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line || line.startsWith("#")) continue; // Salta righe vuote e commenti
+      if (!line || line.startsWith("#") || line.startsWith(",result")) continue; // Salta righe vuote, commenti e header result
 
       try {
-        // Parsing CSV più robusto che gestisce valori con virgole
-        const values: string[] = [];
-        let currentValue = "";
-        let inQuotes = false;
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(currentValue.trim());
-            currentValue = "";
-          } else {
-            currentValue += char;
-          }
-        }
-        values.push(currentValue.trim()); // Aggiungi l'ultimo valore
+        // Parsing CSV semplice (dopo pivot non ci sono virgole nei valori)
+        const values = line.split(",");
 
         if (values.length < headers.length) {
           console.warn(`Line ${i} has ${values.length} values, expected ${headers.length}`);
@@ -207,22 +193,26 @@ export async function GET() {
 
           if (cleanHeader === "_time") {
             row._time = value;
-          } else if (cleanHeader === "_measurement") {
-            row._measurement = value;
-          } else if (cleanHeader === "modbus_address" || cleanHeader === "model" || cleanHeader === "reader_id" || cleanHeader === "reader_type" || cleanHeader === "alloggio_id") {
-            // Tag InfluxDB
-            row[cleanHeader] = value || null;
+          } else if (cleanHeader === "result" || cleanHeader === "table") {
+            // Ignora colonne interne di InfluxDB
+            return;
           } else if (numericFields.includes(cleanHeader)) {
             const numValue = parseFloat(value);
             row[cleanHeader] = !isNaN(numValue) && value !== "" ? numValue : null;
-          } else if (cleanHeader !== "_start" && cleanHeader !== "_stop" && cleanHeader !== "_field") {
-            // Ignora colonne interne di InfluxDB
+          } else {
+            // Altri campi (se presenti)
             row[cleanHeader] = value || null;
           }
         });
 
-        // Valida che il record abbia timestamp e measurement validi
-        if (row._time && row._measurement) {
+        // Valida che il record abbia timestamp
+        if (row._time) {
+          // Aggiungi valori di default per i tag (non presenti dopo pivot)
+          row._measurement = "realtime";
+          row.modbus_address = null; // Non disponibile dopo pivot
+          row.model = null;
+          row.reader_id = null;
+          row.reader_type = null;
           data.push(row);
         }
       } catch (parseError) {
@@ -233,33 +223,27 @@ export async function GET() {
     
     console.log(`Parsed ${data.length} data rows from CSV`);
 
-    // Raggruppa i dati per timestamp e modbus_address per gestire più sensori
+    // Dopo pivot, ogni riga è già un record completo, non serve raggruppare
+    // Ma dobbiamo recuperare i tag da una query separata o usarli come default
     const dataByTime: Record<string, any> = {};
     
     data.forEach((row) => {
       try {
         const timeKey = row._time;
-        if (!timeKey) return; // Salta righe senza timestamp
+        if (!timeKey) return;
         
-        if (!dataByTime[timeKey]) {
-          dataByTime[timeKey] = {
-            _time: row._time,
-            _measurement: row._measurement || "realtime",
-            modbus_address: row.modbus_address || null,
-            model: row.model || null,
-            reader_id: row.reader_id || null,
-            reader_type: row.reader_type || null,
-          };
-        }
-        // Aggiungi i campi numerici (sovrascrive se già presente, ma va bene)
-        numericFields.forEach((field) => {
-          if (row[field] !== undefined && row[field] !== null && !isNaN(row[field])) {
-            dataByTime[timeKey][field] = row[field];
-          }
-        });
+        // Dopo pivot, ogni riga ha già tutti i campi
+        dataByTime[timeKey] = {
+          _time: row._time,
+          _measurement: "realtime",
+          modbus_address: null, // Non disponibile dopo pivot, ma possiamo fare query separata se necessario
+          model: null,
+          reader_id: null,
+          reader_type: null,
+          ...row, // Include tutti i campi numerici
+        };
       } catch (rowError) {
         console.warn("Error processing row:", rowError, row);
-        // Continua con la prossima riga
       }
     });
 

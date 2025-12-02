@@ -5,6 +5,12 @@ export interface SystemSettings {
   num_alloggi: number;
   alloggi: AlloggioConfig[];
   lettori: LettoreModbusConfig[];
+  location?: {
+    city?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 }
 
 export interface AlloggioConfig {

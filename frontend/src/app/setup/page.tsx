@@ -34,6 +34,10 @@ export default function SetupPage() {
     num_alloggi: 0,
     alloggi: [],
     lettori: [],
+    location: {
+      city: "",
+      address: "",
+    },
   });
 
   // Carica dati esistenti al mount
@@ -124,6 +128,10 @@ export default function SetupPage() {
             });
           }
 
+          // Carica location se presente
+          const locationCity = existingSettings.location_city || "";
+          const locationAddress = existingSettings.location_address || "";
+
           // Carica settings principali
           const newSettings: SystemSettings = {
             produzione_fv: existingSettings.produzione_fv === "true",
@@ -131,6 +139,10 @@ export default function SetupPage() {
             num_alloggi: numAlloggi,
             alloggi,
             lettori,
+            location: {
+              city: locationCity,
+              address: locationAddress,
+            },
           };
 
           setSettings(newSettings);
@@ -451,6 +463,56 @@ export default function SetupPage() {
                   />
                 </div>
               </div>
+              
+              {/* Sezione Location */}
+              <div className="space-y-4 pt-4">
+                <h3 className="text-sm font-semibold">Localizzazione Impianto</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location_city">Città</Label>
+                    <Input
+                      id="location_city"
+                      type="text"
+                      placeholder="Es: Milano"
+                      value={settings.location?.city || ""}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          location: {
+                            ...prev.location,
+                            city: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Città dell'impianto per il meteo
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location_address">Indirizzo (opzionale)</Label>
+                    <Input
+                      id="location_address"
+                      type="text"
+                      placeholder="Es: Via Roma 1"
+                      value={settings.location?.address || ""}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          location: {
+                            ...prev.location,
+                            address: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Indirizzo completo per geocoding
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="num_alloggi">Numero di Alloggi</Label>
                 <Input

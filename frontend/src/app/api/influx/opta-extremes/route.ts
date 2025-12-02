@@ -16,7 +16,8 @@ export async function GET() {
       from(bucket: "${bucket}")
         |> range(start: -30m)
         |> filter(fn: (r) => r["_measurement"] == "extremes")
-        |> filter(fn: (r) => r["model"] == "6m_produzione")
+        |> filter(fn: (r) => exists r["type"] and r["type"] == "extremes")
+        |> filter(fn: (r) => exists r["device"] and r["device"] == "opta")
         |> filter(fn: (r) => r["_field"] == "cos_phi_max" or 
                              r["_field"] == "cos_phi_min" or 
                              r["_field"] == "freq_max" or 
@@ -33,7 +34,9 @@ export async function GET() {
                              r["_field"] == "thd_min" or 
                              r["_field"] == "v_max" or 
                              r["_field"] == "v_min")
+        |> filter(fn: (r) => r["_value"] != 0.0)
         |> aggregateWindow(every: 30s, fn: last, createEmpty: false)
+        |> group()
         |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"], desc: true)
         |> limit(n: 60)
