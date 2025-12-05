@@ -13,8 +13,8 @@ interface CacheEntry<T> {
 const hourlyCache: Map<string, CacheEntry<any>> = new Map();
 const geocodeCache: Map<string, CacheEntry<any>> = new Map();
 
-// TTL: 1 ora per hourly forecast, permanente per geocoding
-const HOURLY_CACHE_TTL = 60 * 60 * 1000; // 1 ora
+// TTL: 2 ore per hourly forecast (ridotto per limitare costi), permanente per geocoding
+const HOURLY_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 ore
 const GEOCODE_CACHE_TTL = Infinity; // Geocoding non cambia mai
 
 function getCached<T>(cache: Map<string, CacheEntry<T>>, key: string, ttl: number): T | null {
@@ -123,9 +123,7 @@ export async function GET(request: Request) {
 
       hourlyData = await hourlyResponse.json();
 
-      // Log della risposta completa per debug (solo se non in cache)
-      console.log("Hourly Forecast API Response (fresh) keys:", Object.keys(hourlyData));
-      console.log("Hourly Forecast forecastHours count:", hourlyData.forecastHours?.length);
+      // Log rimosso per ridurre spam console
 
       if (!hourlyResponse.ok || hourlyData.error) {
         return NextResponse.json(
@@ -139,13 +137,10 @@ export async function GET(request: Request) {
 
       // Salva in cache
       setCached(hourlyCache, hourlyCacheKey, hourlyData);
-    } else {
-      console.log("Hourly forecast data served from cache");
     }
 
     // L'API restituisce 'forecastHours'
     const forecastHours = hourlyData.forecastHours || [];
-    console.log("Found forecastHours:", forecastHours.length);
 
     // Mappa le previsioni orarie
     const hourlyForecasts = forecastHours.map((hour: any) => ({

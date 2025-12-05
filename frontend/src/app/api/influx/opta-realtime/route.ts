@@ -14,6 +14,7 @@ export async function GET() {
 
     // Query per dati realtime OPTA (aggiornamento ogni secondo)
     // Legge tutti i dati realtime dal bucket opta (nuovo formato con tag modbus_address, model, type)
+    // Migliorata: rimuove filtro != 0.0 e usa fill() per interpolare buchi
     const fluxQuery = `
       from(bucket: "${bucket}")
         |> range(start: -2m)
@@ -28,8 +29,8 @@ export async function GET() {
                              r["_field"] == "thd" or 
                              r["_field"] == "v_peak" or 
                              r["_field"] == "v_rms")
-        |> filter(fn: (r) => r["_value"] != 0.0)
-        |> aggregateWindow(every: 1s, fn: last, createEmpty: false)
+        |> aggregateWindow(every: 1s, fn: last, createEmpty: true)
+        |> fill(usePrevious: true)
         |> group()
         |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"], desc: true)
@@ -198,6 +199,7 @@ export async function GET() {
             return;
           } else if (numericFields.includes(cleanHeader)) {
             const numValue = parseFloat(value);
+            // Mantieni 0 come valore valido, solo NaN o stringa vuota diventano null
             row[cleanHeader] = !isNaN(numValue) && value !== "" ? numValue : null;
           } else {
             // Altri campi (se presenti)

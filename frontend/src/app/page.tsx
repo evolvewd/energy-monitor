@@ -1,19 +1,27 @@
 // frontend/src/app/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/shared/DashboardLayout";
 import { EnergyMetricsSection } from "@/components/dashboard/EnergyMetricsSection";
 // import { ChartsSection } from "@/components/dashboard/ChartsSection";
 import { WeatherComplete } from "@/components/dashboard/WeatherComplete";
+import { SensorCard } from "@/components/dashboard/SensorCard";
 // import { CameraWidget } from "@/components/shared/CameraWidget";
 import { useDashboard } from "@/hooks/useDashboard";
 // import { useTvccSettings } from "@/contexts/TvccContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Settings, Loader2, AlertCircle, Zap } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Settings, Loader2, AlertCircle, Zap, ChevronUp, ChevronDown } from "lucide-react";
 // import { Camera } from "lucide-react";
 
 export default function HomePage() {
@@ -30,6 +38,10 @@ export default function HomePage() {
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
   const [systemSettings, setSystemSettings] = useState<any>(null);
+  const [timeRange, setTimeRange] = useState<"today" | "yesterday" | "last_week" | "last_month" | "previous_month">("today");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
 
   // Verifica configurazione al mount
   useEffect(() => {
@@ -59,6 +71,122 @@ export default function HomePage() {
 
     checkConfiguration();
   }, []);
+
+  // Gestione scroll card per card
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const checkScrollPosition = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setCanScrollUp(scrollTop > 0);
+      setCanScrollDown(scrollTop < scrollHeight - clientHeight - 10); // 10px di tolleranza
+    };
+
+    // Controlla posizione iniziale
+    checkScrollPosition();
+
+    // Aggiungi listener per scroll
+    container.addEventListener("scroll", checkScrollPosition);
+
+    // Controlla anche quando cambiano i contenuti
+    const resizeObserver = new ResizeObserver(checkScrollPosition);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", checkScrollPosition);
+      resizeObserver.disconnect();
+    };
+  }, [systemSettings?.lettori]);
+
+  const scrollToCard = (direction: "up" | "down") => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll('[data-sensor-card]');
+
+    if (cards.length === 0) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.top + containerRect.height / 2;
+
+    let targetCard: Element | null = null;
+
+    if (direction === "down") {
+      // Scroll giù: trova la prima card completamente sotto il centro visibile
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const cardRect = card.getBoundingClientRect();
+        const cardTop = cardRect.top;
+
+        // Se la card è completamente sotto il centro, questa è la prossima
+        if (cardTop > containerCenter + 50) { // 50px di margine
+          targetCard = card;
+          break;
+        }
+      }
+      // Se non trovata, vai all'ultima card
+      if (!targetCard) {
+        targetCard = cards[cards.length - 1];
+      }
+    } else {
+      // Scroll su: trova la card precedente rispetto a quella attualmente visibile
+      // Prima trova quale card è più vicina al centro (o sopra)
+      let currentCardIndex = -1;
+      let minDistance = Infinity;
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const cardRect = card.getBoundingClientRect();
+        const cardCenter = cardRect.top + cardRect.height / 2;
+        const distance = Math.abs(cardCenter - containerCenter);
+
+        // Se la card è sopra o vicino al centro, potrebbe essere quella corrente
+        if (cardCenter <= containerCenter + 100 && distance < minDistance) {
+          minDistance = distance;
+          currentCardIndex = i;
+        }
+      }
+
+      // Se trovata una card corrente, prendi quella precedente
+      if (currentCardIndex > 0) {
+        targetCard = cards[currentCardIndex - 1];
+      } else if (currentCardIndex === 0) {
+        // Se siamo già sulla prima, vai alla prima
+        targetCard = cards[0];
+      } else {
+        // Se non trovata, cerca l'ultima card completamente sopra il centro
+        for (let i = cards.length - 1; i >= 0; i--) {
+          const card = cards[i];
+          const cardRect = card.getBoundingClientRect();
+          const cardBottom = cardRect.bottom;
+
+          if (cardBottom < containerCenter) {
+            targetCard = card;
+            break;
+          }
+        }
+        // Fallback: prima card
+        if (!targetCard) {
+          targetCard = cards[0];
+        }
+      }
+    }
+
+    if (targetCard) {
+      const cardElement = targetCard as HTMLElement;
+      const cardOffsetTop = cardElement.offsetTop;
+      const containerHeight = containerRect.height;
+      const cardHeight = cardElement.offsetHeight;
+
+      // Calcola la posizione per centrare la card nel viewport
+      const targetScrollTop = cardOffsetTop - (containerHeight / 2) + (cardHeight / 2);
+
+      container.scrollTo({
+        top: Math.max(0, Math.min(targetScrollTop, container.scrollHeight - containerHeight)),
+        behavior: "smooth",
+      });
+    }
+  };
 
   // TVCC - Temporaneamente disabilitato
   // Filtra solo le telecamere abilitate e con IP configurato
@@ -147,175 +275,123 @@ export default function HomePage() {
       isTestingConnections={isTestingConnections}
       onTestConnections={testConnections}
     >
-      <div className="space-y-6">
-        {/* Sistema Produzione (se abilitato) */}
-        {systemSettings?.settings?.produzione_fv === "true" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Zap className="h-5 w-5 mr-2" />
-                Sistema Produzione Fotovoltaica
-              </CardTitle>
-              <CardDescription>
-                Monitoraggio produzione energia fotovoltaica
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Dashboard produzione in sviluppo...
-              </p>
-            </CardContent>
-          </Card>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Meteo - Metà sinistra */}
+        <div className="lg:col-span-1">
+          <WeatherComplete />
+        </div>
 
-        {/* Alloggi */}
-        {/*  {systemSettings?.alloggi && systemSettings.alloggi.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Alloggi Monitorati</CardTitle>
-              <CardDescription>
-                {systemSettings.alloggi.length} alloggio/i configurato/i
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {systemSettings.alloggi.map((alloggio: any) => {
-                  // Trova il lettore modbus corrispondente
-                  const lettore = systemSettings?.lettori?.find(
-                    (l: any) => l.reader_id === `alloggio_${alloggio.alloggio_id}`
-                  );
-                  return (
-                    <Card key={alloggio.alloggio_id}>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{alloggio.name}</CardTitle>
-                        <CardDescription>ID: {alloggio.alloggio_id}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Topic: </span>
-                          <span className="font-mono">
-                            {alloggio.topic_prefix || `alloggio_${alloggio.alloggio_id}`}
-                          </span>
-                        </div>
-                        {lettore && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Indirizzo Modbus: </span>
-                            <span className="font-mono font-semibold">
-                              {lettore.modbus_address || "Non configurato"}
-                            </span>
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Dashboard in sviluppo...
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+        {/* Sensori - Metà destra */}
+        <div className="lg:col-span-1 flex flex-col h-full">
+          <div className="space-y-4 flex flex-col h-full">
+            <div className="flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-xl font-semibold mb-1">Sensori Monitorati</h2>
+                <p className="text-sm text-muted-foreground">
+                  Dati in tempo reale dai lettori Modbus
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        )} */}
-
-        {/* Energy Metrics */}
-        {/*  <EnergyMetricsSection
-          title="Metriche Energetiche"
-          subtitle="Dati in tempo reale dal sistema"
-          metrics={[]} // TODO: implementare energyMetrics
-          showTrendText={true}
-          isLive={true}
-        /> */}
-
-        {/* TVCC Section - Temporaneamente disabilitato */}
-        {/* {settings.tvccEnabled && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Camera className="h-5 w-5 text-primary" />
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    Sistema TVCC
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {enabledCameras.length > 0
-                      ? `${enabledCameras.length
-                      } telecamere attive - Aggiornamento ${parseInt(settings.refreshInterval) / 1000
-                      }sec`
-                      : "Nessuna telecamera configurata"}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/settings")}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configura
-              </Button>
+              <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Seleziona periodo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Oggi</SelectItem>
+                  <SelectItem value="yesterday">Ieri</SelectItem>
+                  <SelectItem value="last_week">Questa settimana</SelectItem>
+                  <SelectItem value="last_month">Questo mese</SelectItem>
+                  <SelectItem value="previous_month">Mese scorso</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {enabledCameras.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {enabledCameras.map((camera) => (
-                  <CameraWidget
-                    key={camera.id}
-                    cameraName={camera.name}
-                    ipAddress={camera.ipAddress}
-                    username={camera.username}
-                    password={camera.password}
-                    status={camera.status}
-                    refreshInterval={parseInt(settings.refreshInterval)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <Camera className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  Nessuna telecamera configurata
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Configura le telecamere nelle impostazioni per iniziare a
-                  visualizzare le immagini.
-                </p>
+            {/* Controlli scroll */}
+            {systemSettings?.lettori && systemSettings.lettori.length > 1 && (
+              <div className="flex items-center justify-center gap-2 py-2">
                 <Button
                   variant="outline"
-                  onClick={() => router.push("/settings")}
+                  size="icon"
+                  onClick={() => scrollToCard("up")}
+                  disabled={!canScrollUp}
+                  className="h-8 w-8"
                 >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Vai alle Impostazioni
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground px-2">
+                  {systemSettings.lettori.length} sensori
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => scrollToCard("down")}
+                  disabled={!canScrollDown}
+                  className="h-8 w-8"
+                >
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
             )}
+
+            {/* Lista sensori - Scrollabile senza scrollbar con snap */}
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto scrollbar-hide scroll-smooth"
+              style={{
+                maxHeight: 'calc(100vh - 320px)',
+                scrollSnapType: 'y proximity',
+                scrollPaddingTop: '1rem'
+              }}
+            >
+              {systemSettings?.lettori && systemSettings.lettori.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3 pr-1">
+                  {systemSettings.lettori.map((lettore: any) => {
+                    // Trova l'alloggio corrispondente
+                    const alloggio = systemSettings?.alloggi?.find(
+                      (a: any) => a.alloggio_id === lettore.alloggio_id
+                    );
+
+                    // Determina il colore in base al tipo
+                    const getColorByType = (type: string) => {
+                      switch (type) {
+                        case "produzione":
+                          return "#10b981"; // Verde per produzione
+                        case "accumulo_ac":
+                        case "accumulo_dc":
+                          return "#8b5cf6"; // Viola per accumulo
+                        case "parti_comuni":
+                          return "#f97316"; // Arancione per parti comuni
+                        case "alloggio":
+                        default:
+                          return "#3b82f6"; // Blu per consumo/alloggio
+                      }
+                    };
+
+                    return (
+                      <div key={lettore.reader_id} data-sensor-card style={{ scrollSnapAlign: 'center' }}>
+                        <SensorCard
+                          sensorName={alloggio?.name || `Sensore ${lettore.modbus_address}`}
+                          modbusAddress={lettore.modbus_address}
+                          model={lettore.model || "6m"}
+                          alloggioId={lettore.alloggio_id}
+                          color={getColorByType(lettore.type || "alloggio")}
+                          timeRange={timeRange}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Nessun sensore configurato. Configura i lettori Modbus nella pagina Setup.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        )}
-
-        {!settings.tvccEnabled && (
-          <div className="bg-muted/50 border border-muted rounded-lg p-6 text-center">
-            <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              Sistema TVCC Disabilitato
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Il sistema di videosorveglianza è attualmente disabilitato. Puoi
-              abilitarlo nelle impostazioni.
-            </p>
-            <Button variant="outline" onClick={() => router.push("/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              Abilita TVCC
-            </Button>
-          </div>
-        )} */}
-
-        {/* Charts Section - Temporaneamente disabilitato */}
-        {/* <ChartsSection /> */}
-
-        {/* Weather Complete - Componente unificato meteo */}
-        <WeatherComplete />
-
-        {/* Quick Actions - Commentato per ora */}
-        {/* <QuickActions connectionStatus={connectionStatus} /> */}
+        </div>
       </div>
     </DashboardLayout>
   );

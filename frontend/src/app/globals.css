@@ -6,8 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,8 +51,8 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.45 0.20 250);
+  --primary-foreground: oklch(0.98 0.01 250);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -85,8 +85,8 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.50 0.18 250);
+  --primary-foreground: oklch(0.98 0.01 250);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
@@ -118,5 +118,119 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Ottimizzazione per risoluzione touch 1024x768 */
+  html {
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Safe area per dispositivi con notch */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  /* Touch optimization - previene selezione testo durante scroll */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none; /* Disabilita menu contestuale iOS */
+    -webkit-user-select: none; /* Previene selezione testo su WebKit */
+    user-select: none; /* Previene selezione testo standard */
+  }
+  
+  /* Permetti selezione testo solo in input e textarea */
+  input,
+  textarea,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  
+  /* Ottimizzazione scroll per touchscreen */
+  body,
+  main,
+  [data-scrollable] {
+    -webkit-overflow-scrolling: touch; /* Scroll fluido iOS */
+    touch-action: pan-y pan-x; /* Permette scroll verticale e orizzontale */
+    overscroll-behavior: contain; /* Previene scroll bounce */
+  }
+  
+  /* Per elementi scrollabili specifici */
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pan-x;
+  }
+  
+  /* Nascondi scrollbar ma mantieni scroll funzionante */
+  .scrollbar-hide {
+    -ms-overflow-style: none !important;  /* IE e Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;  /* Chrome, Safari, Opera */
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Nascondi scrollbar su tutti gli elementi con overflow-y-auto */
+  [class*="overflow-y-auto"],
+  [class*="overflow-auto"] {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  [class*="overflow-y-auto"]::-webkit-scrollbar,
+  [class*="overflow-auto"]::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Cursore nascosto di default, verrà gestito da JavaScript */
+  body {
+    cursor: auto;
+  }
+  
+  /* Mostra cursore solo su elementi interattivi */
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  [onclick] {
+    cursor: pointer;
+  }
+  
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    cursor: text;
+  }
+  
+  /* Ottimizzazioni per risoluzioni touch */
+  @media (max-width: 1024px) {
+    html {
+      font-size: 15px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
+  }
+  
+  /* Card design moderno per app mobile */
+  .card-modern {
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm;
+    @apply border border-gray-200/50 dark:border-gray-800/50;
+    @apply shadow-sm hover:shadow-md transition-shadow;
   }
 }

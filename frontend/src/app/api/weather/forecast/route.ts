@@ -13,8 +13,8 @@ interface CacheEntry<T> {
 const forecastCache: Map<string, CacheEntry<any>> = new Map();
 const geocodeCache: Map<string, CacheEntry<any>> = new Map();
 
-// TTL: 6 ore per forecast, permanente per geocoding
-const FORECAST_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 ore
+// TTL: 12 ore per forecast (ridotto per limitare costi), permanente per geocoding
+const FORECAST_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 ore
 const GEOCODE_CACHE_TTL = Infinity; // Geocoding non cambia mai
 
 function getCached<T>(cache: Map<string, CacheEntry<T>>, key: string, ttl: number): T | null {
@@ -122,9 +122,7 @@ export async function GET(request: Request) {
 
       forecastData = await forecastResponse.json();
 
-      // Log della risposta completa per debug (solo se non in cache)
-      console.log("Forecast API Response (fresh) keys:", Object.keys(forecastData));
-      console.log("Forecast API forecastDays count:", forecastData.forecastDays?.length);
+      // Log rimosso per ridurre spam console
 
       if (!forecastResponse.ok || forecastData.error) {
         return NextResponse.json(
@@ -138,13 +136,10 @@ export async function GET(request: Request) {
 
       // Salva in cache
       setCached(forecastCache, forecastCacheKey, forecastData);
-    } else {
-      console.log("Forecast data served from cache");
     }
 
     // L'API restituisce 'forecastDays' non 'dailyForecasts'!
     const dailyForecasts = forecastData.forecastDays || [];
-    console.log("Found forecastDays:", dailyForecasts.length);
 
     // Mappa le previsioni giornaliere (include anche i dati raw completi)
     const forecasts = dailyForecasts.map((day: any) => ({

@@ -13,8 +13,8 @@ interface CacheEntry<T> {
 const weatherCache: Map<string, CacheEntry<any>> = new Map();
 const geocodeCache: Map<string, CacheEntry<any>> = new Map();
 
-// TTL: 10 minuti per weather, permanente per geocoding
-const WEATHER_CACHE_TTL = 10 * 60 * 1000; // 10 minuti
+// TTL: 2 ore per weather (ridotto per limitare costi API), permanente per geocoding
+const WEATHER_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 ore
 const GEOCODE_CACHE_TTL = Infinity; // Geocoding non cambia mai
 
 function getCached<T>(cache: Map<string, CacheEntry<T>>, key: string, ttl: number): T | null {
@@ -118,8 +118,7 @@ export async function GET() {
 
       weatherData = await weatherResponse.json();
 
-      // Log della risposta completa per debug (solo se non in cache)
-      console.log("Weather API Response (fresh):", JSON.stringify(weatherData, null, 2));
+      // Log rimosso per ridurre spam console
 
       if (!weatherResponse.ok || weatherData.error) {
         return NextResponse.json(
@@ -133,8 +132,6 @@ export async function GET() {
 
       // Salva in cache
       setCached(weatherCache, weatherCacheKey, weatherData);
-    } else {
-      console.log("Weather data served from cache");
     }
 
     // Mappa la risposta dell'API Weather al formato del widget

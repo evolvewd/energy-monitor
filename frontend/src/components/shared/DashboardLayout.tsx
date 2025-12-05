@@ -1,9 +1,12 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { DashboardSidebar } from "./DashboardSidebar";
+import { BottomNavigation } from "./BottomNavigation";
 import { TopHeader } from "./TopHeader";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useHideCursor } from "@/hooks/useHideCursor";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -39,34 +42,34 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onTestConnections,
   className,
 }) => {
+  // Nascondi cursore dopo 3 secondi di inattività (feeling smartphone)
+  useHideCursor(3000);
+
   return (
-    <div className="h-screen bg-background">
-      {/* Sidebar */}
-      <DashboardSidebar
-        healthPercentage={healthPercentage}
-        currentTime={currentTime}
-        systemStatus={systemStatus}
-        connectionStatus={connectionStatus}
-        isTestingConnections={isTestingConnections}
-        onTestConnections={onTestConnections}
-      />
+    <TooltipProvider delayDuration={300}>
+      <div className="h-screen bg-gradient-to-b from-background to-muted/20 max-w-[1024px] mx-auto flex flex-col overflow-hidden">
+        {/* Top Header - Minimale, solo se necessario */}
+        {pageTitle && (
+          <div className="px-6 pt-4 pb-2">
+            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+            {pageSubtitle && (
+              <p className="text-sm text-muted-foreground mt-1">{pageSubtitle}</p>
+            )}
+          </div>
+        )}
 
-      {/* Main Content Area */}
-      <div className="pl-64">
-        {/* Top Header */}
-        <TopHeader
-          title={pageTitle}
-          subtitle={pageSubtitle}
-          actions={headerActions}
-          notifications={notifications}
-        />
-
-        {/* Page Content */}
-        <main className={cn("flex-1 overflow-auto p-6", className)}>
+        {/* Main Content Area - con padding bottom per la navigation */}
+        <main
+          className={cn("flex-1 overflow-auto px-4 py-4 pb-24", className)}
+          data-scrollable
+        >
           {children}
         </main>
+
+        {/* Bottom Navigation */}
+        <BottomNavigation />
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

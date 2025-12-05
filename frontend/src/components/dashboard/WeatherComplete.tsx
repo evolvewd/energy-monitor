@@ -77,7 +77,6 @@ export function WeatherComplete() {
         // Dati attuali (salva tutti i dati utili per autoconsumo)
         if (currentData.success && currentData.data) {
           const weatherData = currentData.data.weather;
-          console.log("Current weather - isDaytime:", weatherData.isDaytime, "condition:", weatherData.condition, "conditionType:", weatherData.conditionType);
           setCurrentWeather({
             location: currentData.data.location,
             temperature: weatherData.temperature,
@@ -130,8 +129,8 @@ export function WeatherComplete() {
     };
 
     fetchAllWeatherData();
-    // Aggiorna ogni 30 minuti
-    const interval = setInterval(fetchAllWeatherData, 30 * 60 * 1000);
+    // Aggiorna ogni 2 ore invece di 30 minuti per ridurre drasticamente i costi API
+    const interval = setInterval(fetchAllWeatherData, 2 * 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -149,9 +148,9 @@ export function WeatherComplete() {
     isDaytime: boolean = true
   ) => {
     const sizeClasses = {
-      small: "h-4 w-4",
-      medium: "h-6 w-6",
-      large: "h-16 w-16",
+      small: "h-4 w-4 sm:h-5 sm:w-5",
+      medium: "h-5 w-5 sm:h-6 sm:w-6",
+      large: "h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16",
     };
     const iconSize = sizeClasses[size];
 
@@ -164,7 +163,7 @@ export function WeatherComplete() {
     }
 
     const conditionLower = condition.toLowerCase();
-    
+
     // Pioggia/Temporali (stessa icona giorno/notte)
     if (conditionLower.includes("rain") || conditionLower.includes("storm") || conditionLower.includes("shower")) {
       return <CloudRain className={`${iconSize} text-blue-600`} />;
@@ -324,7 +323,7 @@ export function WeatherComplete() {
       color = "secondary";
     } else {
       level = "scarso";
-      message = "Sconsigliato: condizioni sfavorevoli";
+      message = "Autoconsumo sconsigliato: condizioni sfavorevoli";
       color = "destructive";
     }
 
@@ -362,19 +361,19 @@ export function WeatherComplete() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           {/* Badge Suggerimento Autoconsumo */}
           {currentWeather && (
             <div className="flex items-center justify-center">
-              <Badge variant={consumptionAdvice.color} className="px-4 py-2 text-sm">
-                <Lightbulb className="h-4 w-4 mr-2" />
+              <Badge variant={consumptionAdvice.color} className="px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
+                <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 {consumptionAdvice.message}
               </Badge>
             </div>
           )}
 
           {/* Sezione Dati Istantanei */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-2 sm:gap-4 lg:gap-6">
             {/* Sinistra: Icona meteo grande */}
             <div className="flex items-center justify-center sm:justify-start">
               {getWeatherIcon(
@@ -385,24 +384,24 @@ export function WeatherComplete() {
             </div>
 
             {/* Centro: Temperatura e condizione */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="text-4xl sm:text-5xl font-bold">
+            <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold">
                 {Math.round(currentWeather.temperature)}°
               </div>
-              <div className="text-base sm:text-lg text-muted-foreground capitalize">
+              <div className="text-sm sm:text-base lg:text-lg text-muted-foreground capitalize">
                 {currentWeather.condition}
               </div>
             </div>
 
             {/* Destra: Città, data e ora */}
-            <div className="flex flex-col items-center sm:items-end text-center sm:text-right gap-1">
-              <div className="text-base sm:text-lg font-semibold">
+            <div className="flex flex-col items-center sm:items-end text-center sm:text-right gap-0.5 sm:gap-1">
+              <div className="text-sm sm:text-base lg:text-lg font-semibold">
                 {currentWeather.location.city}
               </div>
-              <div className="text-xs sm:text-sm text-muted-foreground">
+              <div className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground">
                 {format(currentDateTime, "EEEE d MMMM", { locale: it })}
               </div>
-              <div className="text-base sm:text-lg font-semibold">
+              <div className="text-sm sm:text-base lg:text-lg font-semibold">
                 {format(currentDateTime, "HH:mm:ss")}
               </div>
             </div>
@@ -410,14 +409,14 @@ export function WeatherComplete() {
 
           {/* Previsioni Orarie */}
           {hourlyForecasts.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Clock className="h-4 w-4" />
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>PREVISIONI ORARIE</span>
               </div>
-              <div className="flex items-center gap-3 md:gap-4 lg:gap-6 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-12 md:justify-items-center">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-12 md:justify-items-center">
                 {hourlyForecasts.map((hour, index) => (
-                  <div key={index} className="flex flex-col items-center gap-1.5 min-w-[60px] md:min-w-0">
+                  <div key={index} className="flex flex-col items-center gap-1 sm:gap-1.5 min-w-[50px] sm:min-w-[60px] md:min-w-0">
                     <div className="flex flex-col items-center">
                       {getWeatherIcon(
                         hour.conditionType || hour.condition,
@@ -425,10 +424,10 @@ export function WeatherComplete() {
                         hour.isDaytime !== undefined ? hour.isDaytime : true
                       )}
                     </div>
-                    <div className="text-sm font-semibold">
+                    <div className="text-xs sm:text-sm font-semibold">
                       {Math.round(hour.temperature)}°
                     </div>
-                    <div className="text-xs text-muted-foreground whitespace-nowrap">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                       {hour.time}
                     </div>
                   </div>
@@ -439,17 +438,17 @@ export function WeatherComplete() {
 
           {/* Previsioni 7 Giorni */}
           {dailyForecasts.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Calendar className="h-4 w-4" />
+            <div className="space-y-1 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>PREVISIONI 7 GIORNI</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 {dailyForecasts.map((day, index) => {
                   const isToday = index === 0;
                   const minTemp = day.minTemperature || 0;
                   const maxTemp = day.maxTemperature || 0;
-                  
+
                   // Calcola il range globale per normalizzare le barre
                   const allTemps = dailyForecasts.flatMap((d) => [
                     d.minTemperature || 0,
@@ -458,7 +457,7 @@ export function WeatherComplete() {
                   const maxGlobal = Math.max(...allTemps);
                   const minGlobal = Math.min(...allTemps);
                   const globalRange = maxGlobal - minGlobal;
-                  
+
                   // Calcola posizione e larghezza della barra
                   const barStart = globalRange > 0 ? ((minTemp - minGlobal) / globalRange) * 100 : 0;
                   const barEnd = globalRange > 0 ? ((maxTemp - minGlobal) / globalRange) * 100 : 100;
@@ -467,24 +466,24 @@ export function WeatherComplete() {
                   return (
                     <Dialog key={index}>
                       <DialogTrigger asChild>
-                        <div className="flex items-center gap-3 text-sm cursor-pointer hover:bg-muted/50 rounded-md p-2 transition-colors">
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm cursor-pointer hover:bg-muted/50 rounded-md p-1.5 sm:p-2 transition-colors">
                           {/* Data */}
-                          <div className="w-16 text-left font-medium">
+                          <div className="w-12 sm:w-16 text-left font-medium text-[10px] sm:text-xs">
                             {formatDate(day.date, isToday)}
                           </div>
 
                           {/* Icona e probabilità pioggia */}
-                          <div className="flex items-center gap-1.5 min-w-[60px]">
+                          <div className="flex items-center gap-1 sm:gap-1.5 min-w-[50px] sm:min-w-[60px]">
                             {getWeatherIcon(day.conditionType || day.condition, "small")}
                             {day.precipitationProbability !== undefined && day.precipitationProbability > 0 && (
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                                 {day.precipitationProbability}%
                               </span>
                             )}
                           </div>
 
                           {/* Barra temperatura */}
-                          <div className="flex-1 relative h-2.5 bg-muted rounded-full overflow-hidden">
+                          <div className="flex-1 relative h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
                             <div
                               className={`absolute h-full ${getTemperatureBarColor(minTemp, maxTemp)} rounded-full transition-all`}
                               style={{
@@ -495,11 +494,11 @@ export function WeatherComplete() {
                           </div>
 
                           {/* Temperature */}
-                          <div className="flex items-center gap-2 w-20 justify-end">
-                            <span className="text-muted-foreground text-xs">
+                          <div className="flex items-center gap-1.5 sm:gap-2 w-16 sm:w-20 justify-end">
+                            <span className="text-muted-foreground text-[10px] sm:text-xs">
                               {Math.round(minTemp)}°
                             </span>
-                            <span className="font-semibold">
+                            <span className="font-semibold text-xs sm:text-sm">
                               {Math.round(maxTemp)}°
                             </span>
                           </div>
@@ -515,8 +514,7 @@ export function WeatherComplete() {
                           <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                             {(() => {
                               // Log per debug - mostra tutti i dati disponibili
-                              console.log("Full data for day:", JSON.stringify(day.fullData, null, 2));
-                              
+
                               const formatValue = (value: string | number | null | undefined, unit?: string): string => {
                                 if (value === undefined || value === null || value === '') return '-';
                                 const formatted = typeof value === 'number' ? (Number.isInteger(value) ? value.toString() : value.toFixed(1)) : value;
@@ -531,7 +529,7 @@ export function WeatherComplete() {
                               ) => {
                                 const formattedValue = formatValue(value, unit);
                                 if (formattedValue === '-') return null;
-                                
+
                                 return (
                                   <tr className="border-b hover:bg-muted/50">
                                     <td className="py-1.5 px-3">
@@ -549,9 +547,9 @@ export function WeatherComplete() {
 
                               const getConditionText = (forecast: any) => {
                                 if (!forecast?.weatherCondition) return null;
-                                return forecast.weatherCondition.description?.text || 
-                                       forecast.weatherCondition.type?.replace(/_/g, ' ') || 
-                                       null;
+                                return forecast.weatherCondition.description?.text ||
+                                  forecast.weatherCondition.type?.replace(/_/g, ' ') ||
+                                  null;
                               };
 
                               return (
