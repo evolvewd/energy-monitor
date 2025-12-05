@@ -148,7 +148,7 @@ export default function DatiPage() {
       isTestingConnections={isTestingConnections}
       onTestConnections={testConnections}
     >
-      <div className="space-y-3 max-w-[1024px] mx-auto">
+      <div className="space-y-3 w-full">
         {/* Loading State */}
         {isLoading && (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -171,7 +171,7 @@ export default function DatiPage() {
           </Card>
         )}
 
-        {/* Alloggi Data Strips - ottimizzato per 1024x768 */}
+        {/* Alloggi Data Strips */}
         {!isLoading && !error && alloggiData.size > 0 && (
           <div className="flex flex-col gap-3">
             {alloggi.length > 0 ? (

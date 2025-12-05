@@ -44,18 +44,19 @@ export async function GET() {
     }
 
     // Recupera la città dal database
-    const city = await getSetting("location_city");
-    const address = await getSetting("location_address");
-
-    if (!city && !address) {
-      return NextResponse.json(
-        { success: false, error: "Città o indirizzo non configurati" },
-        { status: 400 }
-      );
+    let city: string | null = null;
+    let address: string | null = null;
+    try {
+      city = await getSetting("location_city");
+      address = await getSetting("location_address");
+    } catch (dbError) {
+      console.error("Errore nel recupero settings dal database:", dbError);
+      // Continua con valori null, useremo un fallback
     }
 
-    // Usa la città o l'indirizzo per geocoding
-    const locationQuery = address || city;
+    // Fallback se non ci sono settings nel database
+    const locationQuery = address || city || "Torino, Italy";
+    
     if (!locationQuery) {
       return NextResponse.json(
         { success: false, error: "Città o indirizzo non configurati" },

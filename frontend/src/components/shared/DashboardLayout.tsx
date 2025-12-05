@@ -47,20 +47,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="h-screen bg-gradient-to-b from-background to-muted/20 max-w-[1024px] mx-auto flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 w-full flex flex-col overflow-hidden">
         {/* Top Header - Minimale, solo se necessario */}
         {pageTitle && (
-          <div className="px-6 pt-4 pb-2">
-            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+          <div className="px-4 sm:px-6 pt-4 pb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{pageTitle}</h1>
             {pageSubtitle && (
-              <p className="text-sm text-muted-foreground mt-1">{pageSubtitle}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{pageSubtitle}</p>
             )}
           </div>
         )}
 
         {/* Main Content Area - con padding bottom per la navigation */}
         <main
-          className={cn("flex-1 overflow-auto px-4 py-4 pb-24", className)}
+          className={cn("flex-1 overflow-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 pb-20 sm:pb-24", className)}
           data-scrollable
         >
           {children}

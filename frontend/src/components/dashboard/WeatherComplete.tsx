@@ -54,6 +54,30 @@ export function WeatherComplete() {
   const [error, setError] = useState<string | null>(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const [todaySunrise, setTodaySunrise] = useState<string | null>(null);
+  const [todaySunset, setTodaySunset] = useState<string | null>(null);
+
+  // Calcola isDaytime usando i dati di sunrise/sunset di Google
+  const calculateIsDaytime = (date: Date = new Date(), sunrise?: string | null, sunset?: string | null): boolean => {
+    // Se abbiamo sunrise/sunset da Google, usali (più accurato)
+    if (sunrise && sunset) {
+      try {
+        const now = date.getTime();
+        const sunriseTime = new Date(sunrise).getTime();
+        const sunsetTime = new Date(sunset).getTime();
+        return now >= sunriseTime && now < sunsetTime;
+      } catch (e) {
+        console.warn("Errore nel calcolo sunrise/sunset, uso fallback", e);
+      }
+    }
+    
+    // Fallback: usa isDaytime dall'API Google se disponibile
+    // Se non disponibile, usa un range conservativo basato sull'ora locale
+    const romeTime = new Date(date.toLocaleString("en-US", { timeZone: "Europe/Rome" }));
+    const hour = romeTime.getHours();
+    // Range conservativo per l'Italia: 7:00 - 18:00
+    return hour >= 7 && hour < 18;
+  };
 
   useEffect(() => {
     const fetchAllWeatherData = async () => {
@@ -77,12 +101,18 @@ export function WeatherComplete() {
         // Dati attuali (salva tutti i dati utili per autoconsumo)
         if (currentData.success && currentData.data) {
           const weatherData = currentData.data.weather;
+          // Usa isDaytime dall'API Google se disponibile, altrimenti calcolalo con sunrise/sunset
+          // Nota: sunrise/sunset verranno impostati dopo il fetch delle previsioni giornaliere
+          let isDaytimeValue = weatherData.isDaytime;
+          
+          // Se l'API dice isDaytime ma non abbiamo ancora sunrise/sunset, usiamo quello dell'API
+          // Altrimenti ricalcoliamo dopo aver ricevuto sunrise/sunset
           setCurrentWeather({
             location: currentData.data.location,
             temperature: weatherData.temperature,
             condition: weatherData.condition,
             conditionType: weatherData.conditionType,
-            isDaytime: weatherData.isDaytime,
+            isDaytime: isDaytimeValue, // Usa quello dell'API Google
             cloudCover: weatherData.cloudCover,
             uvIndex: weatherData.uvIndex,
             precipitationProbability: weatherData.precipitationProbability,
@@ -92,32 +122,76 @@ export function WeatherComplete() {
           });
         }
 
-        // Previsioni orarie
-        if (hourlyData.success && hourlyData.data?.forecasts) {
-          setHourlyForecasts(
-            hourlyData.data.forecasts.slice(0, 12).map((hour: any) => ({
-              time: hour.time,
-              temperature: hour.temperature,
-              condition: hour.condition,
-              conditionType: hour.conditionType,
-              isDaytime: hour.isDaytime,
-            }))
-          );
-        }
-
         // Previsioni giornaliere (salva sia dati semplificati che completi)
+        // Processiamo prima le previsioni giornaliere per ottenere sunrise/sunset
+        let localSunrise: string | null = null;
+        let localSunset: string | null = null;
+        
         if (dailyData.success && dailyData.data?.forecasts) {
           // Salva dati semplificati per la visualizzazione (fullData è già incluso dall'API)
-          setDailyForecasts(
-            dailyData.data.forecasts.map((day: any) => ({
-              date: day.date,
-              maxTemperature: day.maxTemperature,
-              minTemperature: day.minTemperature,
-              condition: day.daytimeForecast?.condition,
-              conditionType: day.daytimeForecast?.conditionType,
-              precipitationProbability: day.daytimeForecast?.precipitation?.probability,
-              fullData: day.fullData, // Usa i dati raw completi dall'API
-            }))
+          const forecasts = dailyData.data.forecasts.map((day: any) => ({
+            date: day.date,
+            maxTemperature: day.maxTemperature,
+            minTemperature: day.minTemperature,
+            condition: day.daytimeForecast?.condition,
+            conditionType: day.daytimeForecast?.conditionType,
+            precipitationProbability: day.daytimeForecast?.precipitation?.probability,
+            fullData: day.fullData, // Usa i dati raw completi dall'API
+            sunEvents: day.sunEvents, // Salva sunrise/sunset (struttura: {sunrise, sunset})
+          }));
+          setDailyForecasts(forecasts);
+          
+          // Estrai sunrise/sunset di oggi (prima previsione) per calcolare isDaytime
+          const today = forecasts[0];
+          if (today?.sunEvents?.sunrise && today?.sunEvents?.sunset) {
+            localSunrise = today.sunEvents.sunrise;
+            localSunset = today.sunEvents.sunset;
+            setTodaySunrise(localSunrise);
+            setTodaySunset(localSunset);
+            
+            // Ricalcola isDaytime con i dati reali di sunrise/sunset
+            try {
+              const accurateIsDaytime = calculateIsDaytime(new Date(), localSunrise, localSunset);
+              setCurrentWeather(prev => prev ? { ...prev, isDaytime: accurateIsDaytime } : null);
+            } catch (e) {
+              console.warn("Errore nel calcolo isDaytime con sunrise/sunset:", e);
+              // Continua senza aggiornare isDaytime
+            }
+          }
+        }
+
+        // Previsioni orarie (processate dopo per avere accesso a sunrise/sunset)
+        if (hourlyData.success && hourlyData.data?.forecasts) {
+          setHourlyForecasts(
+            hourlyData.data.forecasts.slice(0, 12).map((hour: any) => {
+              // Usa isDaytime dall'API Google se disponibile (più accurato)
+              if (hour.isDaytime !== undefined) {
+                return {
+                  time: hour.time,
+                  temperature: hour.temperature,
+                  condition: hour.condition,
+                  conditionType: hour.conditionType,
+                  isDaytime: hour.isDaytime, // Usa quello dell'API Google
+                };
+              }
+              
+              // Fallback: calcola basandosi sull'ora e sunrise/sunset se disponibili
+              let hourDate: Date;
+              if (hour.date && hour.time) {
+                const [hours, minutes] = hour.time.split(':').map(Number);
+                const [year, month, day] = hour.date.split('-').map(Number);
+                hourDate = new Date(year, month - 1, day, hours, minutes);
+              } else {
+                hourDate = new Date();
+              }
+              return {
+                time: hour.time,
+                temperature: hour.temperature,
+                condition: hour.condition,
+                conditionType: hour.conditionType,
+                isDaytime: calculateIsDaytime(hourDate, localSunrise, localSunset),
+              };
+            })
           );
         }
       } catch (err) {
@@ -134,13 +208,30 @@ export function WeatherComplete() {
     return () => clearInterval(interval);
   }, []);
 
-  // Aggiorna data/ora ogni secondo
+  // Aggiorna data/ora ogni secondo (in timezone Europe/Rome)
+  // E ricalcola isDaytime usando sunrise/sunset di Google se disponibili
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
+      // Crea una data che rappresenta l'ora locale di Roma
+      const now = new Date();
+      const romeTimeString = now.toLocaleString("en-US", { timeZone: "Europe/Rome" });
+      setCurrentDateTime(new Date(romeTimeString));
+      
+      // Ricalcola isDaytime con sunrise/sunset se disponibili
+      if (todaySunrise && todaySunset) {
+        setCurrentWeather(prev => {
+          if (!prev) return null;
+          const accurateIsDaytime = calculateIsDaytime(now, todaySunrise, todaySunset);
+          // Aggiorna solo se è cambiato per evitare re-render inutili
+          if (prev.isDaytime !== accurateIsDaytime) {
+            return { ...prev, isDaytime: accurateIsDaytime };
+          }
+          return prev;
+        });
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [todaySunrise, todaySunset]);
 
   const getWeatherIcon = (
     condition: string | undefined,
@@ -399,10 +490,20 @@ export function WeatherComplete() {
                 {currentWeather.location.city}
               </div>
               <div className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground">
-                {format(currentDateTime, "EEEE d MMMM", { locale: it })}
+                {currentDateTime.toLocaleDateString("it-IT", {
+                  timeZone: "Europe/Rome",
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long"
+                })}
               </div>
               <div className="text-sm sm:text-base lg:text-lg font-semibold">
-                {format(currentDateTime, "HH:mm:ss")}
+                {currentDateTime.toLocaleTimeString("it-IT", { 
+                  timeZone: "Europe/Rome",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit"
+                })}
               </div>
             </div>
           </div>
@@ -504,7 +605,7 @@ export function WeatherComplete() {
                           </div>
                         </div>
                       </DialogTrigger>
-                      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+                      <DialogContent className="max-w-full sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
                         <DialogHeader className="pb-2 shrink-0">
                           <DialogTitle className="text-base">
                             Dettagli Tecnici - {formatDate(day.date, isToday)}

@@ -69,7 +69,7 @@ const getLastValidValue = (arr: (number | null)[], index: number): number | null
 export function AlloggioDataStrip({ data }: AlloggioDataStripProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Prepara dati per grafici (ultimi 60 punti per 1024x768)
+  // Prepara dati per grafici (ultimi 60 punti)
   const chartData = useMemo(() => {
     const last60 = data.timeSeries.timestamps.slice(-60);
     return last60.map((timestamp, idx) => {
@@ -133,13 +133,13 @@ export function AlloggioDataStrip({ data }: AlloggioDataStripProps) {
         <Card className="w-full cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-l-primary">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              {/* Nome Alloggio - compatto per 1024px */}
-              <div className="flex-shrink-0 min-w-[120px]">
-                <h3 className="text-base font-semibold text-foreground truncate">{data.name}</h3>
+              {/* Nome Alloggio */}
+              <div className="flex-shrink-0 min-w-[120px] sm:min-w-[150px]">
+                <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{data.name}</h3>
                 <p className="text-xs text-muted-foreground">Alloggio {data.alloggio_id}</p>
               </div>
 
-              {/* Valori Principali - ottimizzati per 1024px */}
+              {/* Valori Principali */}
               <div className="flex items-center gap-3 flex-1 flex-wrap min-w-0">
                 {/* Tensione */}
                 <div className="flex items-center gap-2 min-w-[90px]">
@@ -195,7 +195,7 @@ export function AlloggioDataStrip({ data }: AlloggioDataStripProps) {
         </Card>
       </DialogTrigger>
 
-      <DialogContent className="max-w-[980px] max-h-[720px] overflow-y-auto p-4">
+      <DialogContent className="max-w-full sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg">Dettagli Completi - {data.name}</DialogTitle>
           <DialogDescription className="text-xs">
@@ -295,13 +295,13 @@ export function AlloggioDataStrip({ data }: AlloggioDataStripProps) {
             )}
           </div>
 
-          {/* Grafici Dettagliati - ottimizzati per 1024x768 */}
+          {/* Grafici Dettagliati */}
           <div className="space-y-3">
             {/* Grafico Potenza */}
             <Card>
               <CardContent className="pt-4 pb-4">
                 <h4 className="text-sm font-semibold mb-3">Potenza Attiva</h4>
-                <ChartContainer config={powerChartConfig} className="h-[180px]">
+                <ChartContainer config={powerChartConfig} className="h-[200px] sm:h-[250px] lg:h-[300px]">
                   <AreaChart
                     data={chartData}
                     margin={{
@@ -358,7 +358,7 @@ export function AlloggioDataStrip({ data }: AlloggioDataStripProps) {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <h4 className="text-sm font-semibold mb-3">Tensione e Corrente</h4>
-                <ChartContainer config={voltageCurrentChartConfig} className="h-[180px]">
+                <ChartContainer config={voltageCurrentChartConfig} className="h-[200px] sm:h-[250px] lg:h-[300px]">
                   <LineChart
                     data={chartData}
                     margin={{

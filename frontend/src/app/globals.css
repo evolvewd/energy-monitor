@@ -120,23 +120,9 @@
     @apply bg-background text-foreground;
   }
   
-  /* Ottimizzazione per risoluzione touch 1024x768 */
-  html {
-    font-size: 16px;
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  /* Safe area per dispositivi con notch */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  
   /* Touch optimization - previene selezione testo durante scroll */
   * {
     -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none; /* Disabilita menu contestuale iOS */
-    -webkit-user-select: none; /* Previene selezione testo su WebKit */
-    user-select: none; /* Previene selezione testo standard */
   }
   
   /* Permetti selezione testo solo in input e textarea */
@@ -164,67 +150,16 @@
     touch-action: pan-y pan-x;
   }
   
-  /* Nascondi scrollbar ma mantieni scroll funzionante */
-  .scrollbar-hide {
-    -ms-overflow-style: none !important;  /* IE e Edge */
-    scrollbar-width: none !important;  /* Firefox */
+  /* Nascondi scrollbar su tutti gli elementi */
+  * {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE e Edge */
   }
   
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none !important;  /* Chrome, Safari, Opera */
+  *::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Opera */
     width: 0 !important;
     height: 0 !important;
-  }
-  
-  /* Nascondi scrollbar su tutti gli elementi con overflow-y-auto */
-  [class*="overflow-y-auto"],
-  [class*="overflow-auto"] {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-  
-  [class*="overflow-y-auto"]::-webkit-scrollbar,
-  [class*="overflow-auto"]::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-  
-  /* Cursore nascosto di default, verrà gestito da JavaScript */
-  body {
-    cursor: auto;
-  }
-  
-  /* Mostra cursore solo su elementi interattivi */
-  a,
-  button,
-  input,
-  textarea,
-  select,
-  [role="button"],
-  [onclick] {
-    cursor: pointer;
-  }
-  
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  input[type="password"],
-  textarea {
-    cursor: text;
-  }
-  
-  /* Ottimizzazioni per risoluzioni touch */
-  @media (max-width: 1024px) {
-    html {
-      font-size: 15px;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    html {
-      font-size: 14px;
-    }
   }
   
   /* Card design moderno per app mobile */
