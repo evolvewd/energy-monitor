@@ -1,0 +1,207 @@
+# Configurazione Impianto Fotovoltaico - Energy Monitor
+# File di configurazione per supervisione impianto FV con accumulo e utenze
+
+plant:
+  name: "Condominio Via Roma 1"
+  location: "Torino"
+  timezone: "Europe/Rome"
+  
+  # ============================================
+  # SISTEMA FOTOVOLTAICO
+  # ============================================
+  pv_system:
+    # Configurazione base impianto
+    installed_power_kwp: 50.0          # Potenza installata in kWp
+    panel_area_m2: 300.0               # Superficie totale pannelli in m²
+    panel_efficiency: 0.20              # Efficienza pannelli (20% = 0.20)
+    panel_temperature_coefficient: -0.004  # Coefficiente temperatura (%/°C)
+    
+    # ============================================
+    # STRINGHE FOTOVOLTAICHE
+    # ============================================
+    # Topic MQTT:
+    #   Request:  opta/request/string/{modbus_address}  (es: opta/request/string/1)
+    #   Response: opta/response/string/{id_dinamico}/  (payload JSON completo)
+    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+    #   Payload Response: { "voltage": 445.2, "current": 12.5, ... } (JSON completo)
+    #
+    # Per aggiungere nuove stringhe, aggiungere una nuova voce nell'array strings
+    num_strings: 6                      # Numero di stringhe FV (aggiornare quando si aggiungono stringhe)
+    strings:
+      - id: "string_1"
+        name: "Stringa 1"
+        finder_modbus_address: 1        # Indirizzo Modbus Finder 6M (usato nel topic request)
+        finder_model: "6m"               # Modello Finder: "6m" o "7m"
+        expected_voltage: 450           # Tensione nominale attesa (V)
+        voltage_tolerance_percent: 10   # Tolleranza per anomalie (%)
+      - id: "string_2"
+        name: "Stringa 2"
+        finder_modbus_address: 7
+        finder_model: "6m"
+        expected_voltage: 450
+        voltage_tolerance_percent: 10
+      - id: "string_3"
+        name: "Stringa 3"
+        finder_modbus_address: 3
+        finder_model: "6m"
+        expected_voltage: 450
+        voltage_tolerance_percent: 10
+      - id: "string_4"
+        name: "Stringa 4"
+        finder_modbus_address: 4
+        finder_model: "6m"
+        expected_voltage: 450
+        voltage_tolerance_percent: 10
+      - id: "string_5"
+        name: "Stringa 5"
+        finder_modbus_address: 5
+        finder_model: "6m"
+        expected_voltage: 450
+        voltage_tolerance_percent: 10
+      - id: "string_6"
+        name: "Stringa 6"
+        finder_modbus_address: 6
+        finder_model: "6m"
+        expected_voltage: 450
+        voltage_tolerance_percent: 10
+    
+    # ============================================
+    # INVERTER
+    # ============================================
+    # Topic MQTT:
+    #   Request:  opta/request/inverter/{modbus_address}  (es: opta/request/inverter/2)
+    #   Response: opta/response/inverter/{id_dinamico}/  (payload JSON completo)
+    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+    #   Payload Response: { "power_active": 8500, "energy_total": 12345.6, "status": "running", ... } (JSON completo)
+    inverter:
+      type: "finder"                    # "finder" | "api" | "modbus"
+      model: "Fronius Symo 10.0"
+      finder_modbus_address: 2          # Indirizzo Modbus Finder 6M (usato nel topic request)
+      finder_model: "6m"                 # Modello Finder: "6m" o "7m"
+      api_url: ""                       # Se type = "api" (URL API inverter)
+      modbus_address: 10                # Se type = "modbus" (indirizzo Modbus diretto)
+      expected_power_max_kw: 10.0       # Potenza massima attesa (kW)
+      
+    # ============================================
+    # FREQUENZE LETTURE
+    # ============================================
+    reading_intervals:
+      strings: 10                       # Lettura tensione stringhe ogni 10s
+      inverter: 5                      # Lettura inverter ogni 5s
+      solarimeter: 5                   # Lettura solarimetro ogni 5s
+      pr_calculation: 300              # Calcolo PR ogni 5 minuti (300s)
+      anomaly_check: 60                # Controllo anomalie ogni 60s
+    
+    # ============================================
+    # SOGLIE PER RILEVAMENTO ANOMALIE
+    # ============================================
+    thresholds:
+      # Anomalie stringhe
+      string_voltage_deviation_percent: 10    # Deviazione % dalla media per alert
+      string_voltage_min_percent: 80          # Tensione minima % rispetto attesa
+      string_voltage_max_percent: 120         # Tensione massima % rispetto attesa
+      
+      # Performance Ratio (PR)
+      pr_minimum: 0.70                        # PR minimo accettabile (70%)
+      pr_warning: 0.75                        # PR sotto cui avvisare (75%)
+      pr_excellent: 0.85                      # PR sopra cui considerare eccellente
+      
+      # Inverter
+      inverter_power_deviation_percent: 15    # Deviazione potenza % per alert
+      inverter_status_error: true             # Alert se inverter in errore
+      
+      # Irraggiamento
+      irradiance_min: 50                      # Irraggiamento minimo W/m² (notte)
+      irradiance_max: 1200                    # Irraggiamento massimo atteso W/m²
+  
+  # ============================================
+  # SOLARIMETRO
+  # ============================================
+  # Topic MQTT:
+  #   Se simulation=true:
+  #     - opta/solarimeter/main/irradiance  (pubblicato da Node-RED, payload: {irradiance: 850.5, temperature: 25.3})
+  #   Se simulation=false:
+  #     - Request:  opta/request/solarimeter/{modbus_address}  (es: opta/request/solarimeter/20)
+  #     - Response: opta/response/solarimeter/{id_dinamico}/  (payload JSON completo)
+  #     - Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+  #     - Payload Response: { "irradiance": 850.5, "temperature": 25.3, ... } (JSON completo)
+  solarimeter:
+    enabled: true
+    simulation: true                       # true = simulato (Node-RED), false = reale (da Opta via request/response)
+    modbus_address: 20                     # Indirizzo Modbus (usato nel topic request se reale)
+    finder_model: "6m"                     # Modello Finder: "6m" o "7m" (se reale)
+    
+    # Parametri simulazione
+    simulation_params:
+      # Profilo giornaliero (valori in W/m²)
+      peak_irradiance: 1000              # Picco irraggiamento a mezzogiorno
+      sunrise_hour: 6                   # Ora alba
+      sunset_hour: 20                   # Ora tramonto
+      variation_percent: 8              # Variazione casuale (±%)
+      cloud_probability: 0.15            # Probabilità nuvole (0-1)
+      cloud_reduction_percent: 40        # Riduzione irraggiamento con nuvole (%)
+      
+      # Temperatura ambiente simulata
+      base_temperature: 20               # Temperatura base (°C)
+      temperature_variation: 10         # Variazione temperatura (±°C)
+      temperature_irradiance_factor: 0.05  # Aumento temp con irraggiamento
+  
+  # ============================================
+  # ACCUMULO (Futuro)
+  # ============================================
+  # Topic MQTT:
+  #   Request:  opta/request/battery/{modbus_address}  (es: opta/request/battery/8)
+  #   Response: opta/response/battery/{id_dinamico}/  (payload JSON completo)
+  #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+  #   Payload Response: { "soc": 85, "voltage": 48.2, "current": 12.5, ... } (JSON completo)
+  battery:
+    enabled: false
+    capacity_kwh: 0
+    finder_modbus_address: 8              # Indirizzo Modbus Finder 6M (usato nel topic request)
+    finder_model: "6m"                     # Modello Finder: "6m" o "7m"
+    reading_interval: 10
+  
+  # ============================================
+  # UTENZE/ALLOGGI (Futuro)
+  # ============================================
+  utilities:
+    enabled: false
+    num_alloggi: 0
+    alloggi: []
+  
+  # ============================================
+  # INFLUXDB
+  # ============================================
+  influxdb:
+    bucket: "energy"
+    org: "assistec"
+    retention_days: 90                  # Retention dati (giorni)
+  
+  # ============================================
+  # MQTT - Configurazione Broker
+  # ============================================
+  # Pattern Request/Response:
+  #   Request:  opta/request/{device_type}/{modbus_address}
+  #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+  #   Response: opta/response/{device_type}/{id_dinamico}/  (payload JSON completo)
+  #
+  # Esempi topic:
+  #   - opta/request/string/1 → opta/response/string/{id_dinamico}/ (JSON: {voltage: 445.2, ...})
+  #   - opta/request/inverter/2 → opta/response/inverter/{id_dinamico}/ (JSON: {power_active: 8500, ...})
+  #   - opta/request/solarimeter/20 → opta/response/solarimeter/{id_dinamico}/ (JSON: {irradiance: 850.5, ...})
+  #   - opta/request/battery/8 → opta/response/battery/{id_dinamico}/ (JSON: {soc: 85, ...})
+  #
+  # Pattern Publish Continuo (solo per simulazioni):
+  #   - opta/solarimeter/main/irradiance (se simulation=true, da Node-RED)
+  mqtt:
+    broker: "mosquitto"
+    port: 1883
+    topic_prefix: "opta"                # Prefisso base per tutti i topic
+    
+  # ============================================
+  # LOGGING E DEBUG
+  # ============================================
+  logging:
+    level: "info"                        # "debug" | "info" | "warn" | "error"
+    log_mqtt_messages: false            # Log tutti i messaggi MQTT
+    log_influx_writes: false            # Log scritture InfluxDB

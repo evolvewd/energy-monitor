@@ -69,6 +69,7 @@ services:
       - TZ=Europe/Rome
     volumes:
       - ./nodered/data:/data
+      - ./config:/config
     depends_on:
       - mosquitto
       - influxdb
