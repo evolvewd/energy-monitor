@@ -2,7 +2,7 @@
 # File di configurazione per supervisione impianto FV con accumulo e utenze
 
 plant:
-  name: "Condominio Via Roma 1"
+  name: "Condominio Corso Orbassano 416/9"
   location: "Torino"
   timezone: "Europe/Rome"
   

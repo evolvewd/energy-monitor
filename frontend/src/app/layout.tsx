@@ -44,7 +44,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-        style={{ margin: 0, padding: 0, overflow: 'hidden', backgroundColor: '#232323' }}
+        style={{ margin: 0, padding: 0, overflow: 'hidden', backgroundColor: '#252525', position: 'fixed', width: '100%', height: '100%', touchAction: 'pan-x' }}
         suppressHydrationWarning
       >
         <TvccProvider>{children}</TvccProvider>

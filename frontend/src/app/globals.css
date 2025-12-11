@@ -122,6 +122,8 @@
     height: 100%;
     width: 100%;
     overflow: hidden;
+    position: fixed;
+    overscroll-behavior: none;
   }
   body {
     @apply text-foreground;
@@ -140,21 +142,25 @@
     user-select: text;
   }
   
-  /* Ottimizzazione scroll per touchscreen */
+  /* Ottimizzazione scroll per touchscreen - solo orizzontale */
   body,
-  main,
-  [data-scrollable] {
-    -webkit-overflow-scrolling: touch; /* Scroll fluido iOS */
-    touch-action: pan-y pan-x; /* Permette scroll verticale e orizzontale */
-    overscroll-behavior: contain; /* Previene scroll bounce */
+  main {
+    touch-action: pan-x; /* Permette solo scroll orizzontale */
+    overscroll-behavior: none; /* Previene scroll bounce */
   }
   
-  /* Per elementi scrollabili specifici */
-  .overflow-auto,
-  .overflow-y-auto,
+  /* Per elementi scrollabili specifici - solo orizzontale */
+  [data-scrollable],
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y pan-x;
+    touch-action: pan-x; /* Solo scroll orizzontale */
+    overscroll-behavior: none;
+  }
+  
+  /* Blocca scroll verticale */
+  .overflow-y-auto,
+  .overflow-y-hidden {
+    overflow-y: hidden !important;
   }
   
   /* Nascondi scrollbar su tutti gli elementi */

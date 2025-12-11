@@ -7,9 +7,7 @@ import * as path from 'path';
 
 // Path del file YAML - supporta variabile d'ambiente o path assoluto
 const YAML_CONFIG_PATH = process.env.YAML_CONFIG_PATH || 
-  process.env.NODE_ENV === 'production'
-    ? '/home/energymonitor/apps/energy-monitor/config/plant.yaml'
-    : path.resolve(process.cwd(), '../../config/plant.yaml');
+  '/home/energymonitor/apps/energy-monitor/config/plant.yaml';
 
 // Cache per evitare letture multiple del file
 let configCache: any = null;
@@ -18,7 +16,7 @@ const CACHE_TTL = 5000; // 5 secondi
 
 // ========== UTILITY FUNCTIONS ==========
 
-function loadConfig(): any {
+export function loadConfig(): any {
   const now = Date.now();
   
   // Usa cache se valida
