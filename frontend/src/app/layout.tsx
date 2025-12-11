@@ -43,7 +43,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#020817" />
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        style={{ margin: 0, padding: 0, overflow: 'hidden', backgroundColor: '#232323' }}
         suppressHydrationWarning
       >
         <TvccProvider>{children}</TvccProvider>

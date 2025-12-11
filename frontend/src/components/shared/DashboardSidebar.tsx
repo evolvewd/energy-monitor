@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
   Home,
-  Activity,
-  Settings,
-  Zap,
+  Sun,
+  Battery,
+  Building2,
+  Bell,
   Circle,
   Wifi,
   Server,
@@ -21,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -55,28 +57,33 @@ interface DashboardSidebarProps {
 const navigationItems: NavItem[] = [
   {
     href: "/",
-    label: "Dashboard",
+    label: "Home",
     icon: Home,
-    description: "Panoramica generale",
+    description: "Dashboard principale",
   },
   {
-    href: "/realtime",
-    label: "Dati",
-    icon: Activity,
-    description: "Dati in tempo reale",
-    badge: "LIVE",
+    href: "/produzione",
+    label: "Produzione",
+    icon: Sun,
+    description: "Impianto fotovoltaico",
   },
   {
-    href: "/setup",
-    label: "Setup",
-    icon: Settings,
-    description: "Configurazione impianto",
+    href: "/accumulo",
+    label: "Accumulo",
+    icon: Battery,
+    description: "Sistema di accumulo",
   },
   {
-    href: "/charts-demo",
-    label: "Charts Demo",
-    icon: Activity,
-    description: "Demo grafici Shadcn/ui",
+    href: "/alloggi",
+    label: "Alloggi",
+    icon: Building2,
+    description: "Monitoraggio alloggi",
+  },
+  {
+    href: "/notifiche",
+    label: "Notifiche",
+    icon: Bell,
+    description: "Avvisi e notifiche",
   },
 ];
 

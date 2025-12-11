@@ -9,7 +9,7 @@ import * as path from 'path';
 const YAML_CONFIG_PATH = process.env.YAML_CONFIG_PATH || 
   process.env.NODE_ENV === 'production'
     ? '/home/energymonitor/apps/energy-monitor/config/plant.yaml'
-    : path.join(process.cwd(), '../../config/plant.yaml');
+    : path.resolve(process.cwd(), '../../config/plant.yaml');
 
 // Cache per evitare letture multiple del file
 let configCache: any = null;

@@ -22,7 +22,7 @@ plant:
     # Topic MQTT:
     #   Request:  opta/request/string/{modbus_address}  (es: opta/request/string/1)
     #   Response: opta/response/string/{id_dinamico}/  (payload JSON completo)
-    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m", "type": "string", "timestamp": "..." }
     #   Payload Response: { "voltage": 445.2, "current": 12.5, ... } (JSON completo)
     #
     # Per aggiungere nuove stringhe, aggiungere una nuova voce nell'array strings
@@ -48,7 +48,7 @@ plant:
     # Topic MQTT:
     #   Request:  opta/request/inverter/{modbus_address}  (es: opta/request/inverter/2)
     #   Response: opta/response/inverter/{id_dinamico}/  (payload JSON completo)
-    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m", "type": "inverter", "timestamp": "..." }
     #   Payload Response: { "power_active": 8500, "energy_total": 12345.6, "status": "running", ... } (JSON completo)
     inverter:
       type: "finder"                    # "finder" | "api" | "modbus"
@@ -94,14 +94,14 @@ plant:
   # ============================================
   # SOLARIMETRO
   # ============================================
-  # Topic MQTT:
-  #   Se simulation=true:
-  #     - opta/solarimeter/main/irradiance  (pubblicato da Node-RED, payload: {irradiance: 850.5, temperature: 25.3})
-  #   Se simulation=false:
-  #     - Request:  opta/request/solarimeter/{modbus_address}  (es: opta/request/solarimeter/20)
-  #     - Response: opta/response/solarimeter/{id_dinamico}/  (payload JSON completo)
-  #     - Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
-  #     - Payload Response: { "irradiance": 850.5, "temperature": 25.3, ... } (JSON completo)
+    # Topic MQTT:
+    #   Se simulation=true:
+    #     - opta/solarimeter/main/irradiance  (pubblicato da Node-RED, payload: {irradiance: 850.5, temperature: 25.3})
+    #   Se simulation=false:
+    #     - Request:  opta/request/solarimeter/{modbus_address}  (es: opta/request/solarimeter/20)
+    #     - Response: opta/response/solarimeter/{id_dinamico}/  (payload JSON completo)
+    #     - Payload Request: { "modbus_address": <num>, "model": "6m" | "7m", "type": "solarimeter", "timestamp": "..." }
+    #     - Payload Response: { "irradiance": 850.5, "temperature": 25.3, ... } (JSON completo)
   solarimeter:
     enabled: true
     simulation: true                       # true = simulato (Node-RED), false = reale (da Opta via request/response)
@@ -126,11 +126,11 @@ plant:
   # ============================================
   # ACCUMULO (Futuro)
   # ============================================
-  # Topic MQTT:
-  #   Request:  opta/request/battery/{modbus_address}  (es: opta/request/battery/8)
-  #   Response: opta/response/battery/{id_dinamico}/  (payload JSON completo)
-  #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
-  #   Payload Response: { "soc": 85, "voltage": 48.2, "current": 12.5, ... } (JSON completo)
+    # Topic MQTT:
+    #   Request:  opta/request/battery/{modbus_address}  (es: opta/request/battery/8)
+    #   Response: opta/response/battery/{id_dinamico}/  (payload JSON completo)
+    #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m", "type": "battery", "timestamp": "..." }
+    #   Payload Response: { "soc": 85, "voltage": 48.2, "current": 12.5, ... } (JSON completo)
   battery:
     enabled: false
     capacity_kwh: 0
@@ -175,14 +175,14 @@ plant:
   # ============================================
   # Pattern Request/Response:
   #   Request:  opta/request/{device_type}/{modbus_address}
-  #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m" }
+  #   Payload Request: { "modbus_address": <num>, "model": "6m" | "7m", "type": "<device_type>", "timestamp": "..." }
   #   Response: opta/response/{device_type}/{id_dinamico}/  (payload JSON completo)
   #
-  # Esempi topic:
-  #   - opta/request/string/1 → opta/response/string/{id_dinamico}/ (JSON: {voltage: 445.2, ...})
-  #   - opta/request/inverter/2 → opta/response/inverter/{id_dinamico}/ (JSON: {power_active: 8500, ...})
-  #   - opta/request/solarimeter/20 → opta/response/solarimeter/{id_dinamico}/ (JSON: {irradiance: 850.5, ...})
-  #   - opta/request/battery/8 → opta/response/battery/{id_dinamico}/ (JSON: {soc: 85, ...})
+  # Esempi topic e payload:
+  #   - opta/request/string/1 → Payload: {modbus_address: 1, model: "6m", type: "string", timestamp: "..."}
+  #   - opta/request/inverter/2 → Payload: {modbus_address: 2, model: "6m", type: "inverter", timestamp: "..."}
+  #   - opta/request/solarimeter/20 → Payload: {modbus_address: 20, model: "6m", type: "solarimeter", timestamp: "..."}
+  #   - opta/request/battery/8 → Payload: {modbus_address: 8, model: "6m", type: "battery", timestamp: "..."}
   #
   # Pattern Publish Continuo (solo per simulazioni):
   #   - opta/solarimeter/main/irradiance (se simulation=true, da Node-RED)

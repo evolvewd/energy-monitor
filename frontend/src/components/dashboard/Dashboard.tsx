@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  Home,
   Car,
   Music,
   Grid3x3,
@@ -29,6 +28,8 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { TeslaSidebar } from "@/components/shared/TeslaSidebar";
+import { TeslaTopBar } from "@/components/shared/TeslaTopBar";
 
 interface AlloggioData {
   id: string;
@@ -47,7 +48,7 @@ interface WeatherData {
   condition: string;
 }
 
-export function TeslaStyleDashboard() {
+export function Dashboard() {
   const [currentSpeed, setCurrentSpeed] = useState(64);
   const [selectedGear, setSelectedGear] = useState("D");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -122,57 +123,21 @@ export function TeslaStyleDashboard() {
     : 72;
 
   const gears = ["R", "P", "N", "D", "S"];
-  const navItems = [
-    { icon: Home, active: true },
-    { icon: Car, active: false },
-    { icon: Music, active: false },
-    { icon: Grid3x3, active: false },
-    { icon: Settings, active: false },
-  ];
 
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: "#232323" }}>
-      <div className="h-full w-full flex">
-        {/* Vertical Navigation Bar */}
-        <div className="w-16 sm:w-20 flex flex-col items-center py-6 gap-4" style={{ backgroundColor: "#252525" }}>
-          {navItems.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={idx}
-                className={`p-3 rounded-lg transition-all ${item.active ? "bg-[#3be4b4]" : "hover:bg-[#323232]"
-                  }`}
-                style={{ color: item.active ? "#232323" : "#818181" }}
-              >
-                <Icon className="h-6 w-6" />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col p-4 sm:p-6 gap-4 overflow-y-auto">
+      <TeslaSidebar />
+      <TeslaTopBar notifications={0} />
+      
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col p-4 sm:p-6 gap-4 overflow-y-auto" style={{ marginTop: "80px", marginLeft: "80px" }}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 flex-1">
             {/* Left Column - Main Car Card */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Main Car Info Card */}
               <Card
+                variant="tesla"
                 className="p-4 sm:p-6 hover:scale-[1.01]"
-                style={{
-                  backgroundColor: "#323232",
-                  boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                  transform: "translateY(-2px)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  border: "1px solid rgba(59, 228, 180, 0.1)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 15px 40px rgba(16, 16, 16, 0.6), 0 8px 20px rgba(16, 16, 16, 0.4)";
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
               >
                 {/* Car Image Placeholder */}
                 <div className="mb-4 sm:mb-6">
@@ -321,22 +286,8 @@ export function TeslaStyleDashboard() {
                 {alloggiData.map((alloggio) => (
                   <Card
                     key={alloggio.id}
+                    variant="tesla"
                     className="p-4 sm:p-6 hover:scale-[1.01]"
-                    style={{
-                      backgroundColor: "#323232",
-                      boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                      transform: "translateY(-2px)",
-                      transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                      border: "1px solid rgba(59, 228, 180, 0.1)"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = "0 15px 40px rgba(16, 16, 16, 0.6), 0 8px 20px rgba(16, 16, 16, 0.4)";
-                      e.currentTarget.style.transform = "translateY(-4px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -409,28 +360,13 @@ export function TeslaStyleDashboard() {
                   </Card>
                 ))}
               </div>
-            </div>
 
             {/* Right Column */}
             <div className="space-y-4 sm:space-y-6">
               {/* Navigation Card */}
               <Card
+                variant="tesla"
                 className="p-4 sm:p-6 hover:scale-[1.01]"
-                style={{
-                  backgroundColor: "#323232",
-                  boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                  transform: "translateY(-2px)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  border: "1px solid rgba(59, 228, 180, 0.1)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 15px 40px rgba(16, 16, 16, 0.6), 0 8px 20px rgba(16, 16, 16, 0.4)";
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
               >
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <h3 className="text-base sm:text-lg font-semibold" style={{ color: "#fefefe" }}>
@@ -459,22 +395,8 @@ export function TeslaStyleDashboard() {
 
               {/* Weather & Battery Card */}
               <Card
+                variant="tesla"
                 className="p-4 sm:p-6 hover:scale-[1.01]"
-                style={{
-                  backgroundColor: "#323232",
-                  boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                  transform: "translateY(-2px)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  border: "1px solid rgba(59, 228, 180, 0.1)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 15px 40px rgba(16, 16, 16, 0.6), 0 8px 20px rgba(16, 16, 16, 0.4)";
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
               >
                 <div className="mb-4 sm:mb-6">
                   <div className="flex items-center gap-2 mb-2">
@@ -519,22 +441,8 @@ export function TeslaStyleDashboard() {
 
               {/* Air Conditioner Widget */}
               <Card
+                variant="tesla"
                 className="p-4 sm:p-6 hover:scale-[1.01]"
-                style={{
-                  backgroundColor: "#323232",
-                  boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                  transform: "translateY(-2px)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  border: "1px solid rgba(59, 228, 180, 0.1)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 15px 40px rgba(16, 16, 16, 0.6), 0 8px 20px rgba(16, 16, 16, 0.4)";
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
               >
                 <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6" style={{ color: "#fefefe" }}>
                   Air Conditioner
@@ -583,14 +491,8 @@ export function TeslaStyleDashboard() {
           {/* Bottom Control Panel */}
           <div className="mt-4 sm:mt-6">
             <Card
+              variant="tesla"
               className="p-4 sm:p-6"
-              style={{
-                backgroundColor: "#323232",
-                boxShadow: "0 10px 30px rgba(16, 16, 16, 0.5), 0 5px 15px rgba(16, 16, 16, 0.3)",
-                transform: "translateY(-2px)",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                border: "1px solid rgba(59, 228, 180, 0.1)"
-              }}
             >
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-4">
                 {[
