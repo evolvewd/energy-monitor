@@ -1,8 +1,13 @@
 // app/api/weather/route.ts
 import { NextResponse } from "next/server";
-import { getSetting } from "@/lib/postgres-settings";
+import { getSetting } from "@/lib/yaml-settings";
 
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+// La chiave API viene letta dal YAML (plant.settings.weather.api_key)
+// Fallback a variabile d'ambiente per retrocompatibilità
+async function getGoogleMapsApiKey(): Promise<string | null> {
+  const yamlKey = await getSetting("weather_api_key");
+  return yamlKey || process.env.GOOGLE_MAPS_API_KEY || null;
+}
 
 // Cache in-memory per ridurre chiamate API
 interface CacheEntry<T> {
@@ -36,21 +41,23 @@ function setCached<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): 
 
 export async function GET() {
   try {
+    const GOOGLE_MAPS_API_KEY = await getGoogleMapsApiKey();
+    
     if (!GOOGLE_MAPS_API_KEY) {
       return NextResponse.json(
-        { success: false, error: "Google Maps API key non configurata" },
+        { success: false, error: "Google Maps API key non configurata. Configurala in plant.yaml (settings.weather.api_key) o nella variabile d'ambiente GOOGLE_MAPS_API_KEY" },
         { status: 500 }
       );
     }
 
-    // Recupera la città dal database
+    // Recupera la città dalla configurazione YAML
     let city: string | null = null;
     let address: string | null = null;
     try {
       city = await getSetting("location_city");
       address = await getSetting("location_address");
-    } catch (dbError) {
-      console.error("Errore nel recupero settings dal database:", dbError);
+    } catch (configError) {
+      console.error("Errore nel recupero settings dalla configurazione:", configError);
       // Continua con valori null, useremo un fallback
     }
 

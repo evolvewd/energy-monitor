@@ -1,8 +1,13 @@
 // app/api/weather/hourly/route.ts
 import { NextResponse } from "next/server";
-import { getSetting } from "@/lib/postgres-settings";
+import { getSetting } from "@/lib/yaml-settings";
 
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+// La chiave API viene letta dal YAML (plant.settings.weather.api_key)
+// Fallback a variabile d'ambiente per retrocompatibilità
+async function getGoogleMapsApiKey(): Promise<string | null> {
+  const yamlKey = await getSetting("weather_api_key");
+  return yamlKey || process.env.GOOGLE_MAPS_API_KEY || null;
+}
 
 // Cache in-memory per ridurre chiamate API
 interface CacheEntry<T> {
@@ -36,6 +41,8 @@ function setCached<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): 
 
 export async function GET(request: Request) {
   try {
+    const GOOGLE_MAPS_API_KEY = await getGoogleMapsApiKey();
+    
     if (!GOOGLE_MAPS_API_KEY) {
       return NextResponse.json(
         { success: false, error: "Google Maps API key non configurata" },

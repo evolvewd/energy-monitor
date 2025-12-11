@@ -26,44 +26,21 @@ plant:
     #   Payload Response: { "voltage": 445.2, "current": 12.5, ... } (JSON completo)
     #
     # Per aggiungere nuove stringhe, aggiungere una nuova voce nell'array strings
-    num_strings: 6                      # Numero di stringhe FV (aggiornare quando si aggiungono stringhe)
+    num_strings: 2                      # Numero di stringhe FV (aggiornare quando si aggiungono stringhe)
     strings:
       - id: "string_1"
         name: "Stringa 1"
-        finder_modbus_address: 1        # Indirizzo Modbus Finder 6M (usato nel topic request)
+        finder_modbus_address: 10        # Indirizzo Modbus Finder 6M (usato nel topic request)
         finder_model: "6m"               # Modello Finder: "6m" o "7m"
         expected_voltage: 450           # Tensione nominale attesa (V)
         voltage_tolerance_percent: 10   # Tolleranza per anomalie (%)
       - id: "string_2"
         name: "Stringa 2"
-        finder_modbus_address: 7
+        finder_modbus_address: 11
         finder_model: "6m"
         expected_voltage: 450
         voltage_tolerance_percent: 10
-      - id: "string_3"
-        name: "Stringa 3"
-        finder_modbus_address: 3
-        finder_model: "6m"
-        expected_voltage: 450
-        voltage_tolerance_percent: 10
-      - id: "string_4"
-        name: "Stringa 4"
-        finder_modbus_address: 4
-        finder_model: "6m"
-        expected_voltage: 450
-        voltage_tolerance_percent: 10
-      - id: "string_5"
-        name: "Stringa 5"
-        finder_modbus_address: 5
-        finder_model: "6m"
-        expected_voltage: 450
-        voltage_tolerance_percent: 10
-      - id: "string_6"
-        name: "Stringa 6"
-        finder_modbus_address: 6
-        finder_model: "6m"
-        expected_voltage: 450
-        voltage_tolerance_percent: 10
+      
     
     # ============================================
     # INVERTER
@@ -168,6 +145,22 @@ plant:
     enabled: false
     num_alloggi: 0
     alloggi: []
+  
+  # ============================================
+  # SETTINGS SISTEMA E FRONTEND
+  # ============================================
+  settings:
+    # Configurazione sistema
+    is_configured: false                    # true se l'impianto è configurato
+    produzione_fv: true                     # true se produzione FV è abilitata
+    accumulo_enabled: false                 # true se accumulo è abilitato
+    
+    # API Meteo (Google Weather API)
+    weather:
+      api_key: "AIzaSyBNCHVa_xJKouhGIVRyfu_IU0h4i47E85k"                          # API key Google Weather API (https://developers.google.com/maps/documentation/weather)
+      # Fallback: se vuota, usa la variabile d'ambiente GOOGLE_MAPS_API_KEY
+      provider: "google"                    # Provider meteo (attualmente solo "google")
+      # Location viene presa da plant.location e plant.name
   
   # ============================================
   # INFLUXDB

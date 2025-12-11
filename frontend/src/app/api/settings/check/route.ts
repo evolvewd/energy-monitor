@@ -1,6 +1,6 @@
 // app/api/settings/check/route.ts
 import { NextResponse } from "next/server";
-import { getSetting } from "@/lib/postgres-settings";
+import { getSetting } from "@/lib/yaml-settings";
 
 // GET - Verifica se il sistema è configurato
 export async function GET() {
