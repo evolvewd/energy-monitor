@@ -104,7 +104,7 @@ export async function GET() {
     let weatherData = getCached(weatherCache, weatherCacheKey, WEATHER_CACHE_TTL);
 
     if (!weatherData) {
-      const weatherUrl = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}`;
+      const weatherUrl = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}&languageCode=it`;
 
       const weatherResponse = await fetch(weatherUrl, {
         method: "GET",
@@ -125,8 +125,51 @@ export async function GET() {
       }
 
       weatherData = await weatherResponse.json();
+      
+      // Log per verificare se ci sono errori
+      if (weatherData.error) {
+        console.error("Weather API Error:", weatherData.error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: weatherData.error?.message || weatherData.error || "Errore nel recupero dati meteo",
+          },
+          { status: weatherResponse.status || 500 }
+        );
+      }
+      
+      // Verifica che la risposta sia valida
+      if (!weatherData || !weatherData.temperature) {
+        console.error("Weather API - Risposta non valida:", weatherData);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Risposta API non valida",
+          },
+          { status: 500 }
+        );
+      }
 
-      // Log rimosso per ridurre spam console
+      // Log completo della risposta raw di Google per debug
+      console.log("=== GOOGLE WEATHER API - RISPOSTA COMPLETA (Current Conditions) ===");
+      console.log("Risposta raw completa:", JSON.stringify(weatherData, null, 2));
+      console.log("Dettagli campi specifici:", {
+        uvIndex: weatherData.uvIndex,
+        uvIndexType: typeof weatherData.uvIndex,
+        cloudCover: weatherData.cloudCover,
+        cloudCoverType: typeof weatherData.cloudCover,
+        cloudCoverObject: JSON.stringify(weatherData.cloudCover),
+        cloudCoverPercent: weatherData.cloudCover?.percent,
+        cloudCoverPercentType: typeof weatherData.cloudCover?.percent,
+        humidity: weatherData.relativeHumidity,
+        windSpeed: weatherData.wind?.speedKph,
+        airPressure: weatherData.airPressure?.meanSeaLevelMillibars,
+        precipitationProbability: weatherData.precipitation?.probability?.percent,
+        isDaytime: weatherData.isDaytime,
+        currentTime: weatherData.currentTime,
+        weatherCondition: weatherData.weatherCondition,
+      });
+      console.log("=== FINE LOG GOOGLE WEATHER API ===");
 
       if (!weatherResponse.ok || weatherData.error) {
         return NextResponse.json(

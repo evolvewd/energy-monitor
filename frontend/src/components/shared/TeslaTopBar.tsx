@@ -25,6 +25,7 @@ export const TeslaTopBar = ({ notifications = 0, className }: TeslaTopBarProps) 
           minute: "2-digit",
           second: "2-digit",
           hour12: false,
+          timeZone: "Europe/Rome",
         })
       );
       setCurrentDate(
@@ -33,6 +34,7 @@ export const TeslaTopBar = ({ notifications = 0, className }: TeslaTopBarProps) 
           day: "numeric",
           month: "long",
           year: "numeric",
+          timeZone: "Europe/Rome",
         })
       );
     };
@@ -46,7 +48,7 @@ export const TeslaTopBar = ({ notifications = 0, className }: TeslaTopBarProps) 
   return (
     <header
       className={cn(
-        "fixed top-2 sm:top-4 left-16 sm:left-28 md:left-32 right-2 sm:right-4 z-30 flex items-center justify-between px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-xl",
+        "fixed top-2 sm:top-4 left-16 sm:left-28 md:left-32 right-0 z-30 flex items-center justify-between pl-3 sm:pl-4 md:pl-6 pr-2 sm:pr-4 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-xl",
         className
       )}
     >

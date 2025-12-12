@@ -107,7 +107,7 @@ export async function GET(request: Request) {
     let forecastData = getCached(forecastCache, forecastCacheKey, FORECAST_CACHE_TTL);
 
     if (!forecastData) {
-      const forecastUrl = `https://weather.googleapis.com/v1/forecast/days:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}&days=${days}`;
+      const forecastUrl = `https://weather.googleapis.com/v1/forecast/days:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}&days=${days}&languageCode=it`;
 
       const forecastResponse = await fetch(forecastUrl, {
         method: "GET",
@@ -129,7 +129,52 @@ export async function GET(request: Request) {
 
       forecastData = await forecastResponse.json();
 
-      // Log rimosso per ridurre spam console
+      // Log completo della risposta raw di Google per debug
+      console.log("=== GOOGLE WEATHER API - RISPOSTA COMPLETA (Forecast 7 Giorni) ===");
+      console.log("Risposta raw completa:", JSON.stringify(forecastData, null, 2));
+      
+      // Log specifico per oggi (primo giorno)
+      if (forecastData.forecastDays && forecastData.forecastDays.length > 0) {
+        const oggi = forecastData.forecastDays[0];
+        console.log("=== DATI DI OGGI (dal forecast 7 giorni) ===");
+        console.log("Data:", `${oggi.displayDate?.year}-${oggi.displayDate?.month}-${oggi.displayDate?.day}`);
+        console.log("Dati completi di oggi:", JSON.stringify(oggi, null, 2));
+        console.log("Dettagli specifici di oggi:", {
+          uvIndexDaytime: oggi.daytimeForecast?.uvIndex,
+          uvIndexNighttime: oggi.nighttimeForecast?.uvIndex,
+          cloudCoverDaytime: oggi.daytimeForecast?.cloudCover,
+          cloudCoverDaytimeObject: JSON.stringify(oggi.daytimeForecast?.cloudCover),
+          cloudCoverNighttime: oggi.nighttimeForecast?.cloudCover,
+          cloudCoverNighttimeObject: JSON.stringify(oggi.nighttimeForecast?.cloudCover),
+          cloudCoverDaytimePercent: oggi.daytimeForecast?.cloudCover?.percent,
+          cloudCoverNighttimePercent: oggi.nighttimeForecast?.cloudCover?.percent,
+          humidityDaytime: oggi.daytimeForecast?.relativeHumidity,
+          humidityNighttime: oggi.nighttimeForecast?.relativeHumidity,
+          maxTemp: oggi.maxTemperature?.degrees,
+          minTemp: oggi.minTemperature?.degrees,
+          precipitationDaytime: oggi.daytimeForecast?.precipitation?.probability?.percent,
+          precipitationNighttime: oggi.nighttimeForecast?.precipitation?.probability?.percent,
+          conditionDaytime: oggi.daytimeForecast?.weatherCondition,
+          conditionNighttime: oggi.nighttimeForecast?.weatherCondition,
+        });
+        console.log("=== FINE DATI DI OGGI ===");
+      }
+      
+      // Log UV Index per tutti i 7 giorni
+      console.log("Dettagli UV Index per i prossimi 7 giorni:");
+      if (forecastData.forecastDays) {
+        forecastData.forecastDays.forEach((day: any, index: number) => {
+          console.log(`Giorno ${index + 1} (${day.displayDate?.year}-${day.displayDate?.month}-${day.displayDate?.day}):`, {
+            uvIndexDaytime: day.daytimeForecast?.uvIndex,
+            uvIndexNighttime: day.nighttimeForecast?.uvIndex,
+            cloudCoverDaytime: day.daytimeForecast?.cloudCover,
+            cloudCoverNighttime: day.nighttimeForecast?.cloudCover,
+            cloudCoverDaytimePercent: day.daytimeForecast?.cloudCover?.percent,
+            cloudCoverNighttimePercent: day.nighttimeForecast?.cloudCover?.percent,
+          });
+        });
+      }
+      console.log("=== FINE LOG GOOGLE FORECAST API ===");
 
       if (!forecastResponse.ok || forecastData.error) {
         return NextResponse.json(
@@ -176,7 +221,10 @@ export async function GET(request: Request) {
           cardinal: day.daytimeForecast?.wind?.direction?.cardinal,
           gust: day.daytimeForecast?.wind?.gust?.value,
         },
-        cloudCover: day.daytimeForecast?.cloudCover,
+        // cloudCover può essere un numero diretto o un oggetto con .percent
+        cloudCover: typeof day.daytimeForecast?.cloudCover === 'number' 
+          ? day.daytimeForecast.cloudCover 
+          : day.daytimeForecast?.cloudCover?.percent,
       },
       nighttimeForecast: {
         condition: day.nighttimeForecast?.weatherCondition?.description?.text || day.nighttimeForecast?.weatherCondition?.type,
@@ -196,7 +244,10 @@ export async function GET(request: Request) {
           cardinal: day.nighttimeForecast?.wind?.direction?.cardinal,
           gust: day.nighttimeForecast?.wind?.gust?.value,
         },
-        cloudCover: day.nighttimeForecast?.cloudCover,
+        // cloudCover può essere un numero diretto o un oggetto con .percent
+        cloudCover: typeof day.nighttimeForecast?.cloudCover === 'number' 
+          ? day.nighttimeForecast.cloudCover 
+          : day.nighttimeForecast?.cloudCover?.percent,
       },
       sunEvents: {
         sunrise: day.sunEvents?.sunriseTime,

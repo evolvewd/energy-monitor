@@ -108,7 +108,7 @@ export async function GET(request: Request) {
 
     if (!hourlyData) {
       // https://developers.google.com/maps/documentation/weather/hourly-forecast
-      const hourlyUrl = `https://weather.googleapis.com/v1/forecast/hours:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}&hours=${hours}`;
+      const hourlyUrl = `https://weather.googleapis.com/v1/forecast/hours:lookup?key=${GOOGLE_MAPS_API_KEY}&location.latitude=${lat}&location.longitude=${lng}&hours=${hours}&languageCode=it`;
 
       const hourlyResponse = await fetch(hourlyUrl, {
         method: "GET",
